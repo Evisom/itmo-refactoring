@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  operation:
+    build:
+      context: ./operationService
+      dockerfile: Dockerfile
+    ports:
+      - "5110:8083"
+    networks:
+      - app-network
+
+  book:
+    build:
+      context: ./bookService
+      dockerfile: Dockerfile
+    ports:
+      - "5112:8082"
+    networks:
+      - app-network
+
+  email:
+    build:
+      context: ./emailService
+      dockerfile: Dockerfile
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

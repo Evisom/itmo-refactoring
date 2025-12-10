@@ -1,0 +1,36 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: bookService
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/boobook}
+    username: ${SPRING_DATASOURCE_USERNAME:admin}
+    password: ${SPRING_DATASOURCE_PASSWORD:admin}
+  jpa:
+    properties:
+      hibernate:
+        jdbc.lob.non_contextual_creation: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      temp:
+        use_jdbc_metadata_defaults: false
+
+      ddl-auto: update
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://keycloak:8080/realms/boobook}
+#keycloak:
+#  auth-server-url: http://localhost:8080
+#  realm: booBook_realm
+#  resource: springsecurity
+#  bearer-only: true
+#  security-constraints:
+#    - authRoles:
+#        - uma_authorization
+#      securityCollections:
+#        - patterns:
+#            - /api/*

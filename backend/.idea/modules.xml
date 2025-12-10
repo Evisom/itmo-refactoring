@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/authService.main.iml" filepath="$PROJECT_DIR$/.idea/modules/authService.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/authService.test.iml" filepath="$PROJECT_DIR$/.idea/modules/authService.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/boobook.iml" filepath="$PROJECT_DIR$/boobook.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/bookService.main.iml" filepath="$PROJECT_DIR$/.idea/modules/bookService.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/emailService.main.iml" filepath="$PROJECT_DIR$/.idea/modules/emailService.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/operationService.main.iml" filepath="$PROJECT_DIR$/.idea/modules/operationService.main.iml" />
+    </modules>
+  </component>
+</project>
