@@ -46,26 +46,37 @@ public class TransactionService {
         BookCopy book = bookCopyList.get(0);
         transaction.setBookCopy(book);
 //
-        // Получаем пользователя из SecurityContext (временно без аутентификации)
-        CustomUserDetails userDetails = null;
+        // Получаем пользователя из SecurityContext
+        String userId = null;
+        String email = null;
+        String firstName = null;
+        String lastName = null;
+        
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.getPrincipal() != null) {
                 if (auth.getPrincipal() instanceof Jwt) {
                     Jwt jwt = (Jwt) auth.getPrincipal();
-                    userDetails = JwtTokenUtil.parseToken(jwt.getTokenValue());
+                    userId = jwt.getClaimAsString("sub");
+                    email = jwt.getClaimAsString("email");
+                    firstName = jwt.getClaimAsString("given_name");
+                    lastName = jwt.getClaimAsString("family_name");
                 } else if (auth.getPrincipal() instanceof CustomUserDetails) {
-                    userDetails = (CustomUserDetails) auth.getPrincipal();
+                    CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+                    userId = userDetails.getId();
+                    email = userDetails.getEmail();
+                    firstName = userDetails.getFirstName();
+                    lastName = userDetails.getLastName();
                 }
             }
         } catch (Exception e) {
             // Игнорируем ошибки аутентификации
         }
 
-        transaction.setUserId(userDetails != null ? userDetails.getId() : "anonymous");
-        transaction.setEmail(userDetails != null ? userDetails.getEmail() : "anonymous@example.com");
-        transaction.setFirstName(userDetails != null ? userDetails.getFirstName() : "Anonymous");
-        transaction.setLastName(userDetails != null ? userDetails.getLastName() : "User");
+        transaction.setUserId(userId != null ? userId : "anonymous");
+        transaction.setEmail(email != null ? email : "anonymous@example.com");
+        transaction.setFirstName(firstName != null ? firstName : "Anonymous");
+        transaction.setLastName(lastName != null ? lastName : "User");
         transaction.setStatus(Status.PENDING);
         transaction.setCreationDate(LocalDateTime.now());
         return BookTransactionModel.toModel(bookTransactionRepository.save(transaction));
@@ -166,23 +177,25 @@ public class TransactionService {
     public List<Status> getStatus(Long bookId) {
         List<Status> allStatus = new ArrayList<>();
         
-        // Получаем пользователя из SecurityContext (временно без аутентификации)
-        CustomUserDetails userDetails = null;
+        // Получаем пользователя из SecurityContext
+        String userId = null;
+        
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.getPrincipal() != null) {
                 if (auth.getPrincipal() instanceof Jwt) {
                     Jwt jwt = (Jwt) auth.getPrincipal();
-                    userDetails = JwtTokenUtil.parseToken(jwt.getTokenValue());
+                    userId = jwt.getClaimAsString("sub");
                 } else if (auth.getPrincipal() instanceof CustomUserDetails) {
-                    userDetails = (CustomUserDetails) auth.getPrincipal();
+                    CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+                    userId = userDetails.getId();
                 }
             }
         } catch (Exception e) {
             // Игнорируем ошибки аутентификации
         }
         
-        String userId = userDetails != null ? userDetails.getId() : "anonymous";
+        userId = userId != null ? userId : "anonymous";
 
         List<BookTransaction> bookTransactionsList = bookTransactionRepository.findByUserId(userId);
 
