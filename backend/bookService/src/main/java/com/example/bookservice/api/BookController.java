@@ -1,10 +1,9 @@
 package com.example.bookservice.api;
 
 import com.example.bookservice.api.Endpoints;
-import com.example.shared.model.Book;
-import com.example.bookservice.model.BookModel;
-import com.example.bookservice.model.BookSearchRequest;
+import com.example.bookservice.dto.*;
 import com.example.bookservice.service.BookService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,33 +19,32 @@ public class BookController {
     private final BookService bookService;
 
     @GetMapping("/find")
-    public ResponseEntity<Page<BookModel>> findBooks(
+    public ResponseEntity<Page<BookResponse>> findBooks(
             @ModelAttribute BookSearchRequest request,
             Pageable pageable) {
         return ResponseEntity.ok(bookService.findBooks(request, pageable));
     }
 
-
     @GetMapping("/books/{id}")
-    public ResponseEntity<BookModel> getBookById(@PathVariable Long id) {
+    public ResponseEntity<BookResponse> getBookById(@PathVariable Long id) {
         return ResponseEntity.ok(bookService.findBookById(id));
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")
     @PostMapping("/newBook")
-    public ResponseEntity<BookModel> createBook(@RequestBody Book Book) {
-        return ResponseEntity.ok(bookService.createBook(Book));
+    public ResponseEntity<BookResponse> createBook(@Valid @RequestBody BookCreateRequest request) {
+        return ResponseEntity.ok(bookService.createBook(request));
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")
     @PutMapping("/books/{id}")
-    public ResponseEntity<BookModel> updateBook(@PathVariable Long id, @RequestBody Book Book) {
-        return ResponseEntity.ok(bookService.updateBook(id, Book));
+    public ResponseEntity<BookResponse> updateBook(@PathVariable Long id, @Valid @RequestBody BookUpdateRequest request) {
+        return ResponseEntity.ok(bookService.updateBook(id, request));
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")
     @DeleteMapping("/books/{id}")
-    public ResponseEntity<Void> deleteHumanBeing(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
         if (bookService.deleteBook(id)) {
             return ResponseEntity.noContent().build();
         } else {

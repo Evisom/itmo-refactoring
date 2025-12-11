@@ -1,9 +1,10 @@
 package com.example.operationservice.api;
 
 import com.example.operationservice.api.Endpoints;
-import com.example.operationservice.model.*;
+import com.example.operationservice.dto.*;
+import com.example.operationservice.model.Status;
 import com.example.operationservice.service.TransactionService;
-import com.example.operationservice.model.LibraryRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,26 +30,25 @@ public class TransactionController {
     }
 
     @PostMapping("/books/{id}/reserve")
-    public ResponseEntity<BookTransactionModel> reservBook(@PathVariable Long id, @RequestBody LibraryRequest library) {
-        return ResponseEntity.ok(transactionService.reserve(id, library));
+    public ResponseEntity<BookTransactionResponse> reservBook(@PathVariable Long id, @Valid @RequestBody TransactionCreateRequest request) {
+        return ResponseEntity.ok(transactionService.reserve(id, request));
     }
-
 
     @PreAuthorize("hasRole('LIBRARIAN')")
     @PostMapping("/approve/{id}")
-    public ResponseEntity<BookTransactionModel> approveRequest(@PathVariable Long id) {
+    public ResponseEntity<BookTransactionResponse> approveRequest(@PathVariable Long id) {
         return ResponseEntity.ok(transactionService.approve(id));
     }
+
     @PreAuthorize("hasRole('LIBRARIAN')")
     @PostMapping("/decline/{id}")
-    public ResponseEntity<BookTransactionModel> declineRequest(@PathVariable Long id, @RequestBody Reason reason) {
-        return ResponseEntity.ok(transactionService.decline(id, reason));
+    public ResponseEntity<BookTransactionResponse> declineRequest(@PathVariable Long id, @Valid @RequestBody TransactionDeclineRequest request) {
+        return ResponseEntity.ok(transactionService.decline(id, request));
     }
-
 
     @PreAuthorize("hasRole('LIBRARIAN')")
     @PostMapping("/return")
-    public ResponseEntity<BookTransactionModel> returnBook(@RequestBody ReturnRequest request) {
+    public ResponseEntity<BookTransactionResponse> returnBook(@Valid @RequestBody TransactionReturnRequest request) {
         return ResponseEntity.ok(transactionService.returnBack(request));
     }
 
@@ -56,6 +56,5 @@ public class TransactionController {
     public ResponseEntity<Void> cancel(@PathVariable Long id) {
         return ResponseEntity.ok(transactionService.cancel(id));
     }
-
 
 }

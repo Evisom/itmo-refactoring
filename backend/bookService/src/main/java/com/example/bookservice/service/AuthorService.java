@@ -1,8 +1,9 @@
 package com.example.bookservice.service;
 
-
+import com.example.bookservice.dto.AuthorCreateRequest;
+import com.example.shared.dto.AuthorResponse;
+import com.example.bookservice.dto.mapper.AuthorMapper;
 import com.example.shared.model.Author;
-import com.example.bookservice.model.AuthorModel;
 import com.example.bookservice.repository.AuthorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,17 +16,22 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthorService {
     private final AuthorRepository authorRepository;
-
-     @Transactional
-    public AuthorModel createAuthor(Author author) {
-        return AuthorModel.toModel(authorRepository.save(author));
-    }
-
+    private final AuthorMapper authorMapper;
 
     @Transactional
-    public List<AuthorModel> findAllAuthors() {
+    public AuthorResponse createAuthor(AuthorCreateRequest request) {
+        Author author = new Author();
+        author.setName(request.getName());
+        author.setSurname(request.getSurname());
+        author.setBirthDate(request.getBirthDate());
+        return authorMapper.toResponse(authorRepository.save(author));
+    }
 
-        return authorRepository.findAll().stream().map(AuthorModel::toModel).collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public List<AuthorResponse> findAllAuthors() {
+        return authorRepository.findAll().stream()
+                .map(authorMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional

@@ -1,8 +1,10 @@
 package com.example.bookservice.api;
 
 import com.example.bookservice.api.Endpoints;
-import com.example.shared.model.Genre;
+import com.example.bookservice.dto.GenreCreateRequest;
+import com.example.shared.dto.GenreResponse;
 import com.example.bookservice.service.GenreService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +20,14 @@ public class GenreController {
     private final GenreService genreService;
 
     @GetMapping
-    public ResponseEntity<List<Genre>> allGenres() {
+    public ResponseEntity<List<GenreResponse>> allGenres() {
         return ResponseEntity.status(HttpStatus.OK).body(genreService.findAllGenres());
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")
     @PostMapping
-    public ResponseEntity<Genre> createGenre(@RequestBody Genre genre) {
-        return ResponseEntity.ok(genreService.createGenre(genre));
+    public ResponseEntity<GenreResponse> createGenre(@Valid @RequestBody GenreCreateRequest request) {
+        return ResponseEntity.ok(genreService.createGenre(request));
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")

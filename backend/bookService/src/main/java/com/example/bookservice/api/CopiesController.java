@@ -1,8 +1,11 @@
 package com.example.bookservice.api;
 
 import com.example.bookservice.api.Endpoints;
-import com.example.bookservice.model.BookCopyModel;
+import com.example.bookservice.dto.BookCopyCreateRequest;
+import com.example.bookservice.dto.BookCopyResponse;
+import com.example.bookservice.dto.BookCopyUpdateRequest;
 import com.example.bookservice.service.CopiesService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,21 +21,20 @@ public class CopiesController {
 
     @PreAuthorize("hasRole('LIBRARIAN')")
     @GetMapping
-    public ResponseEntity<Page<BookCopyModel>> findBooks(@RequestParam(required = false) Long bookId, @RequestParam(required = false) Long libraryId, Pageable pageable) {
+    public ResponseEntity<Page<BookCopyResponse>> findBooks(@RequestParam(required = false) Long bookId, @RequestParam(required = false) Long libraryId, Pageable pageable) {
         return ResponseEntity.ok(copiesService.findBooks(bookId, libraryId,pageable));
     }
 
-
     @PreAuthorize("hasRole('LIBRARIAN')")
     @PostMapping
-    public ResponseEntity<BookCopyModel> createBook(@RequestBody BookCopyModel bookCopyook) {
-        return ResponseEntity.ok(copiesService.createBook(bookCopyook));
+    public ResponseEntity<BookCopyResponse> createBook(@Valid @RequestBody BookCopyCreateRequest request) {
+        return ResponseEntity.ok(copiesService.createBook(request));
     }
-    @PreAuthorize("hasRole('LIBRARIAN')")
 
+    @PreAuthorize("hasRole('LIBRARIAN')")
     @PutMapping("/{id}")
-    public ResponseEntity<BookCopyModel> updateCopies(@PathVariable Long id, @RequestBody BookCopyModel bookCopy) {
-        return ResponseEntity.ok(copiesService.updateCopy(id, bookCopy));
+    public ResponseEntity<BookCopyResponse> updateCopies(@PathVariable Long id, @Valid @RequestBody BookCopyUpdateRequest request) {
+        return ResponseEntity.ok(copiesService.updateCopy(id, request));
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")

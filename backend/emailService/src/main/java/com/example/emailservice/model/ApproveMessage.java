@@ -1,4 +1,4 @@
-package com.example.emailservice.context;
+package com.example.emailservice.model;
 
 import lombok.Getter;
 

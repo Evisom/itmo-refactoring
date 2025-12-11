@@ -1,6 +1,8 @@
 package com.example.bookservice.service;
 
-
+import com.example.bookservice.dto.GenreCreateRequest;
+import com.example.shared.dto.GenreResponse;
+import com.example.bookservice.dto.mapper.GenreMapper;
 import com.example.shared.model.Genre;
 import com.example.bookservice.repository.GenreRepository;
 import lombok.RequiredArgsConstructor;
@@ -8,23 +10,28 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class GenreService {
     private final GenreRepository genreRepository;
+    private final GenreMapper genreMapper;
 
-    @Transactional
-    public List<Genre> findAllGenres() {
-
-        return genreRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<GenreResponse> findAllGenres() {
+        return genreRepository.findAll().stream()
+                .map(genreMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public Genre createGenre(Genre genre) {
-        return genreRepository.save(genre);
+    public GenreResponse createGenre(GenreCreateRequest request) {
+        Genre genre = new Genre();
+        genre.setName(request.getName());
+        genre.setPopularity(request.getPopularity());
+        return genreMapper.toResponse(genreRepository.save(genre));
     }
-
 
     @Transactional
     public boolean deleteGenre(Long id) {

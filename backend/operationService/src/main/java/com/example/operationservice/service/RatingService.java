@@ -1,8 +1,10 @@
 package com.example.operationservice.service;
 
+import com.example.operationservice.dto.RatingCreateRequest;
+import com.example.operationservice.dto.RatingResponse;
+import com.example.operationservice.dto.mapper.RatingMapper;
 import com.example.operationservice.repository.BookRepository;
 import com.example.operationservice.model.Rating;
-import com.example.operationservice.model.RatingModel;
 import com.example.operationservice.repository.RatingRepository;
 import com.example.operationservice.config.CustomUserDetails;
 import com.example.operationservice.config.JwtTokenUtil;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,27 +25,18 @@ import java.util.stream.Collectors;
 public class RatingService {
     private final RatingRepository ratingRepository;
     private final BookRepository bookRepository;
+    private final RatingMapper ratingMapper;
 
-    @Transactional
-    public List<RatingModel> getAllRatings() {
-        return ratingRepository.findAll().stream().map(RatingModel::toModel).collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public List<RatingResponse> getOneRatings(Long bookId) {
+        List<Rating> ratingList = ratingRepository.findAllByBookId(bookId).orElse(Collections.emptyList());
+        return ratingList.stream()
+                .map(ratingMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public List<RatingModel> getOneRatings(Long bookId) {
-        List<Rating> ratingList = ratingRepository.findAllByBookId(bookId).orElse(null);
-        if (ratingList != null) {
-            return ratingList.stream().map(RatingModel::toModel).collect(Collectors.toList());
-        }
-        return null;
-    }
-
-    @Transactional
-
-    public RatingModel createReview(RatingModel rating) {
-
-
-        // Получаем пользователя из SecurityContext (временно без аутентификации)
+    public RatingResponse createReview(RatingCreateRequest request) {
         CustomUserDetails userDetails = null;
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -55,17 +49,14 @@ public class RatingService {
                 }
             }
         } catch (Exception e) {
-            // Игнорируем ошибки аутентификации
         }
         
         Rating newRating = new Rating();
-
-        newRating.setRatingValue(rating.getRatingValue().shortValue());
-        newRating.setReview(rating.getReview());
+        newRating.setRatingValue(request.getRatingValue().shortValue());
+        newRating.setReview(request.getReview());
         newRating.setUserId(userDetails != null ? userDetails.getId() : "anonymous");
-        newRating.setBook(bookRepository.findById(rating.getBookId()).orElseThrow());
+        newRating.setBook(bookRepository.findById(request.getBookId()).orElseThrow());
         newRating.setTime(LocalDateTime.now());
-        // createdAt и updatedAt устанавливаются автоматически через @PrePersist
-        return RatingModel.toModel(ratingRepository.save(newRating));
+        return ratingMapper.toResponse(ratingRepository.save(newRating));
     }
 }

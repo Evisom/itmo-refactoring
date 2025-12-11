@@ -1,10 +1,11 @@
 package com.example.bookservice.api;
 
 import com.example.bookservice.api.Endpoints;
+import com.example.bookservice.dto.LibraryCreateRequest;
+import com.example.bookservice.dto.LibraryResponse;
 import com.example.bookservice.service.BookCopyCsvService;
-import com.example.shared.model.Library;
-import com.example.bookservice.model.LibraryResponse;
 import com.example.bookservice.service.LibraryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +26,7 @@ public class LibraryController {
 
 
     @GetMapping("/allLibraries")
-    public ResponseEntity<List<Library>> getAllLibraries() {
+    public ResponseEntity<List<LibraryResponse>> getAllLibraries() {
         return ResponseEntity.ok(libraryService.getLibrary());
     }
 
@@ -35,8 +36,8 @@ public class LibraryController {
     }
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/new")
-    public ResponseEntity<Library> createLibrary(@RequestBody Library library) {
-        return ResponseEntity.ok(libraryService.create(library));
+    public ResponseEntity<LibraryResponse> createLibrary(@Valid @RequestBody LibraryCreateRequest request) {
+        return ResponseEntity.ok(libraryService.create(request));
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")

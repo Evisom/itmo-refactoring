@@ -1,9 +1,10 @@
 package com.example.bookservice.api;
 
 import com.example.bookservice.api.Endpoints;
-import com.example.shared.model.Author;
-import com.example.bookservice.model.AuthorModel;
+import com.example.bookservice.dto.AuthorCreateRequest;
+import com.example.shared.dto.AuthorResponse;
 import com.example.bookservice.service.AuthorService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,25 +20,24 @@ public class AuthorController {
     private final AuthorService authorService;
 
     @GetMapping
-    public ResponseEntity<List<AuthorModel>> allGenres() {
+    public ResponseEntity<List<AuthorResponse>> allAuthors() {
         return ResponseEntity.status(HttpStatus.OK).body(authorService.findAllAuthors());
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")
     @PostMapping
-    public ResponseEntity<AuthorModel> createAuthor(@RequestBody Author author){
-        return ResponseEntity.ok(authorService.createAuthor(author));
+    public ResponseEntity<AuthorResponse> createAuthor(@Valid @RequestBody AuthorCreateRequest request){
+        return ResponseEntity.ok(authorService.createAuthor(request));
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteHumanBeing(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteAuthor(@PathVariable Long id) {
         if (authorService.deleteAuthor(id)) {
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.notFound().build();
         }
     }
-
 
 }

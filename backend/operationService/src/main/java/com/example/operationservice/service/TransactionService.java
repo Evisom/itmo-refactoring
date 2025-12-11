@@ -1,12 +1,17 @@
 package com.example.operationservice.service;
 
+import com.example.operationservice.dto.BookTransactionResponse;
+import com.example.operationservice.dto.TransactionCreateRequest;
+import com.example.operationservice.dto.TransactionDeclineRequest;
+import com.example.operationservice.dto.TransactionResponse;
+import com.example.operationservice.dto.TransactionReturnRequest;
+import com.example.operationservice.dto.mapper.TransactionMapper;
 import com.example.operationservice.exception.BookCopyNotFoundInLibraryException;
 import com.example.operationservice.model.BookCopy;
 import com.example.operationservice.repository.CopiesRepository;
 import com.example.operationservice.exception.BookNotAprrovedYetException;
 import com.example.operationservice.model.*;
 import com.example.operationservice.repository.BookTransactionRepository;
-import com.example.operationservice.model.LibraryRequest;
 import com.example.operationservice.config.CustomUserDetails;
 import com.example.operationservice.config.JwtTokenUtil;
 import org.springframework.security.core.Authentication;
@@ -31,66 +36,53 @@ import java.util.stream.Collectors;
 public class TransactionService {
     private final BookTransactionRepository bookTransactionRepository;
     private final CopiesRepository copiesRepository;
-
     private final KafkaProducer kafkaProducer;
     private final ObjectMapper objectMapper;
+    private final TransactionMapper transactionMapper;
 
     @Transactional
-    public BookTransactionModel reserve(Long id, LibraryRequest library) {
+    public BookTransactionResponse reserve(Long id, TransactionCreateRequest request) {
         BookTransaction transaction = new BookTransaction();
-        List<BookCopy> bookCopyList = copiesRepository.findByBookIdAndLibraryId(id, library.getLibraryId())
-                .stream().filter(status -> status.getAvailable() == Boolean.TRUE).toList();
+        List<BookCopy> bookCopyList = copiesRepository.findByBookIdAndLibraryId(id, request.getLibraryId())
+                .stream().filter(status -> status.getAvailable() == Boolean.TRUE).collect(java.util.stream.Collectors.toList());
         if (bookCopyList.isEmpty()) {
             throw new BookCopyNotFoundInLibraryException("Book copy not found in Library");
         }
         BookCopy book = bookCopyList.get(0);
         transaction.setBookCopy(book);
-//
-        // Получаем пользователя из SecurityContext
+
         String userId = null;
-        String email = null;
-        String firstName = null;
-        String lastName = null;
-        
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.getPrincipal() != null) {
                 if (auth.getPrincipal() instanceof Jwt) {
                     Jwt jwt = (Jwt) auth.getPrincipal();
                     userId = jwt.getClaimAsString("sub");
-                    email = jwt.getClaimAsString("email");
-                    firstName = jwt.getClaimAsString("given_name");
-                    lastName = jwt.getClaimAsString("family_name");
                 } else if (auth.getPrincipal() instanceof CustomUserDetails) {
                     CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
                     userId = userDetails.getId();
-                    email = userDetails.getEmail();
-                    firstName = userDetails.getFirstName();
-                    lastName = userDetails.getLastName();
                 }
             }
         } catch (Exception e) {
-            // Игнорируем ошибки аутентификации
         }
 
         transaction.setUserId(userId != null ? userId : "anonymous");
         transaction.setStatus(Status.PENDING);
         transaction.setCreationDate(LocalDateTime.now());
-        // createdAt и updatedAt устанавливаются автоматически через @PrePersist
-        return BookTransactionModel.toModel(bookTransactionRepository.save(transaction));
+        return transactionMapper.toBookTransactionResponse(bookTransactionRepository.save(transaction));
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<TransactionResponse> getRequests(Long libraryId) {
         List<BookTransaction> res = bookTransactionRepository.findUnborrowedTransactionsByLibraryId(libraryId);
         return res.stream()
                 .filter(bookTransaction -> bookTransaction.getStatus() != Status.REJECTED)
-                .map(TransactionResponse::fromBookTransToResponse).collect(Collectors.toList());
-
+                .map(transactionMapper::toTransactionResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public BookTransactionModel approve(Long id) {
+    public BookTransactionResponse approve(Long id) {
         BookTransaction transaction = bookTransactionRepository.findById(id).orElse(null);
         transaction.setBorrowDate(LocalDateTime.now());
         BookCopy bookCopy = transaction.getBookCopy();
@@ -132,15 +124,14 @@ public class TransactionService {
             throw new RuntimeException();
         }
 
-        return BookTransactionModel.toModel(bookTransactionRepository.save(transaction));
-
+        return transactionMapper.toBookTransactionResponse(bookTransactionRepository.save(transaction));
     }
 
     @Transactional
-    public BookTransactionModel decline(Long id, Reason reason) {
+    public BookTransactionResponse decline(Long id, TransactionDeclineRequest request) {
         BookTransaction transaction = bookTransactionRepository.findById(id).orElse(null);
         transaction.setStatus(Status.REJECTED);
-        transaction.setComment(reason.getComment());
+        transaction.setComment(request.getComment());
 
         // Получаем email из JWT для отправки уведомления
         String userEmail = null;
@@ -171,14 +162,14 @@ public class TransactionService {
         } catch (JsonProcessingException ex) {
             throw new RuntimeException();
         }
-        return BookTransactionModel.toModel(bookTransactionRepository.save(transaction));
+        return transactionMapper.toBookTransactionResponse(bookTransactionRepository.save(transaction));
     }
 
     @Transactional
-    public BookTransactionModel returnBack(ReturnRequest request) {
-        List<BookCopy> bookCopies = copiesRepository.findByInventoryNumber(request.getInvNumber());
+    public BookTransactionResponse returnBack(TransactionReturnRequest request) {
+        List<BookCopy> bookCopies = copiesRepository.findByInventoryNumber(request.getInventoryNumber());
         if (bookCopies == null || bookCopies.isEmpty()) {
-            throw new BookCopyNotFoundInLibraryException("Book copy with inventory number " + request.getInvNumber() + " not found");
+            throw new BookCopyNotFoundInLibraryException("Book copy with inventory number " + request.getInventoryNumber() + " not found");
         }
         // Если несколько копий с одним инвентарным номером, берем первую
         BookCopy bookCopy = bookCopies.get(0);
@@ -192,7 +183,7 @@ public class TransactionService {
         bookTransaction.setStatus(Status.RETURNED);
         bookTransaction.setReturnDate(LocalDateTime.now());
 
-        return BookTransactionModel.toModel(bookTransactionRepository.save(bookTransaction));
+        return transactionMapper.toBookTransactionResponse(bookTransactionRepository.save(bookTransaction));
     }
 
     @Transactional

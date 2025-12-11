@@ -1,8 +1,10 @@
 package com.example.bookservice.api;
 
 import com.example.bookservice.api.Endpoints;
-import com.example.shared.model.Theme;
+import com.example.bookservice.dto.ThemeCreateRequest;
+import com.example.shared.dto.ThemeResponse;
 import com.example.bookservice.service.ThemeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +20,14 @@ public class ThemeController {
     private final ThemeService themeService;
 
     @GetMapping
-    public ResponseEntity<List<Theme>> allThemes() {
+    public ResponseEntity<List<ThemeResponse>> allThemes() {
         return ResponseEntity.status(HttpStatus.OK).body(themeService.findAllThemes());
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")
     @PostMapping
-    public ResponseEntity<Theme> createTheme(@RequestBody Theme theme) {
-        return ResponseEntity.ok(themeService.createTheme(theme));
+    public ResponseEntity<ThemeResponse> createTheme(@Valid @RequestBody ThemeCreateRequest request) {
+        return ResponseEntity.ok(themeService.createTheme(request));
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")

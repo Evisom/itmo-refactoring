@@ -1,5 +1,6 @@
-package com.example.emailservice.context;
+package com.example.emailservice.service;
 
+import com.example.emailservice.model.EmailRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +15,7 @@ public class KafkaConsumerService {
     private final MailSenderService mailSenderService;
     private final ObjectMapper objectMapper;
 
-
-    @KafkaListener(topics = "email_requests",groupId = "email-service-group")
+    @KafkaListener(topics = "email_requests", groupId = "email-service-group")
     public void listen(String message) {
         try {
             log.info("Received email request: {}", message);

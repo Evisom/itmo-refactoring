@@ -1,8 +1,10 @@
 package com.example.bookservice.api;
 
 import com.example.bookservice.api.Endpoints;
-import com.example.shared.model.Publisher;
+import com.example.bookservice.dto.PublisherCreateRequest;
+import com.example.shared.dto.PublisherResponse;
 import com.example.bookservice.service.PublisherService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +20,14 @@ public class PublisherController {
     private final PublisherService publisherService;
 
     @GetMapping
-    public ResponseEntity<List<Publisher>> allPublishers() {
+    public ResponseEntity<List<PublisherResponse>> allPublishers() {
         return ResponseEntity.status(HttpStatus.OK).body(publisherService.findAllPublishers());
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")
     @PostMapping
-    public ResponseEntity<Publisher> createPublisher(@RequestBody Publisher publisher) {
-        return ResponseEntity.ok(publisherService.createPublisher(publisher));
+    public ResponseEntity<PublisherResponse> createPublisher(@Valid @RequestBody PublisherCreateRequest request) {
+        return ResponseEntity.ok(publisherService.createPublisher(request));
     }
 
     @PreAuthorize("hasRole('LIBRARIAN')")
@@ -37,6 +39,5 @@ public class PublisherController {
             return ResponseEntity.notFound().build();
         }
     }
-
 
 }
