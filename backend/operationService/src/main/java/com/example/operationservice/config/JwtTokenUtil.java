@@ -1,6 +1,6 @@
 package com.example.operationservice.config;
 
-import com.example.operationservice.context.user.CustomUserDetails;
+import com.example.operationservice.config.CustomUserDetails;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

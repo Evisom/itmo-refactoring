@@ -1,7 +1,7 @@
 package com.example.operationservice.filter;
 
 import com.example.operationservice.config.JwtTokenUtil;
-import com.example.operationservice.context.user.CustomUserDetails;
+import com.example.operationservice.config.CustomUserDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
