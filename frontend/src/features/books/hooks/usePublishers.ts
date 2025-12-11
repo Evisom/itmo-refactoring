@@ -4,6 +4,7 @@ import useSWR from "swr";
 import publishersApi from "@/features/books/services/publishers-api";
 import type { PublisherResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { defaultSWROptions } from "@/shared/services/swr-config";
 
 export const usePublishers = () => {
   const { token } = useAuth();
@@ -12,7 +13,7 @@ export const usePublishers = () => {
     token ? ["publishers", token] : null,
     () => publishersApi.getPublishers(token),
     {
-      revalidateOnFocus: false,
+      defaultSWROptions
     }
   );
 

@@ -4,6 +4,7 @@ import useSWR from "swr";
 import booksApi from "@/features/books/services/books-api";
 import type { BookListResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { defaultSWROptions } from "@/shared/services/swr-config";
 
 interface UseBookCopiesParams {
   page?: number;
@@ -16,9 +17,7 @@ export const useBookCopies = (bookId: number | null, params?: UseBookCopiesParam
   const { data, error, isLoading, isValidating, mutate } = useSWR<BookListResponse>(
     token && bookId ? ["bookCopies", bookId, params, token] : null,
     () => booksApi.getBookCopies(token, bookId!, params),
-    {
-      revalidateOnFocus: false,
-    }
+    defaultSWROptions
   );
 
   return {
