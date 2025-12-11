@@ -27,3 +27,4 @@ public class RatingControllerV2 {
     return ResponseEntity.status(HttpStatus.CREATED).body(ratingService.createReview(request));
   }
 }
+

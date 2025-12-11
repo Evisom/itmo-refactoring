@@ -1,76 +1,57 @@
 "use client";
 
-import React, { useState } from "react";
-
-import useSWR from "swr";
+import React from "react";
 import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Progress } from "@/app/components/Progress";
-import { useAuth } from "@/app/components/AuthProvider";
-
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { TableSkeleton } from "@/shared/components/ui/Skeleton";
+import { useGenres } from "@/features/books/hooks/useGenres";
+import { useCreateGenre } from "@/features/books/hooks/useCreateGenre";
+import { useDeleteGenre } from "@/features/books/hooks/useDeleteGenre";
+import { useErrorHandler } from "@/shared/utils/useErrorHandler";
+import { genreFormSchema, type GenreFormData } from "@/shared/validation/schemas";
 
 import "./page.scss";
-import { useErrorAlert } from "@/app/utils/useErrorAlert";
 
 export const Genres = () => {
-  const { token } = useAuth();
-  const { error, showError } = useErrorAlert();
-  const [formState, setFormState] = useState({
-    name: "",
-    popularity: "",
+  const { error, handleError } = useErrorHandler();
+  const { genres, isLoading } = useGenres();
+  const { createGenre, isLoading: creating } = useCreateGenre();
+  const { deleteGenre } = useDeleteGenre();
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<GenreFormData>({
+    resolver: zodResolver(genreFormSchema),
+    defaultValues: {
+      name: "",
+      popularity: "",
+    },
   });
 
-  const { data, mutate } = useSWR(
-    token ? [`${config.API_URL}/library/genres`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
-
-  const handleInputChange =
-    (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFormState((prevState) => ({
-        ...prevState,
-        [field]: event.target.value,
-      }));
-    };
-
-  const isValidForm = () =>
-    formState.name.trim() && /^\d+$/.test(formState.popularity);
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: GenreFormData) => {
     try {
-      const response = await fetch(`${config.API_URL}/library/genres`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formState.name,
-          popularity: parseInt(formState.popularity, 10),
-        }),
+      await createGenre({
+        name: data.name.trim(),
+        popularity: data.popularity,
       });
-      if (!response.ok) throw new Error("Ошибка при создании жанра");
-      mutate();
+      reset();
     } catch (err) {
-      showError((err as Error).message);
+      handleError(err, "Genres.onSubmit");
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`${config.API_URL}/library/genres/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Ошибка при удалении жанра");
-      mutate();
+      await deleteGenre(id);
     } catch (err) {
-      showError((err as Error).message);
+      handleError(err, "Genres.handleDelete");
     }
   };
 
@@ -96,35 +77,49 @@ export const Genres = () => {
     },
   ];
 
-  if (!data) return <Progress />;
+  if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
     <>
       <Card variant="outlined" className="card">
         <CardContent>
-          <div className="form">
+          <form onSubmit={handleSubmit(onSubmit)} className="form">
             <div className="controls">
-              <TextField
-                label="Название"
-                value={formState.name}
-                onChange={handleInputChange("name")}
+              <Controller
+                name="name"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Название"
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                )}
               />
-              <TextField
-                label="Популярность"
-                type="number"
-                value={formState.popularity}
-                onChange={handleInputChange("popularity")}
+              <Controller
+                name="popularity"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Популярность"
+                    type="number"
+                    error={!!errors.popularity}
+                    helperText={errors.popularity?.message}
+                  />
+                )}
               />
             </div>
 
             <Button
+              type="submit"
               variant="outlined"
-              disabled={!isValidForm()}
-              onClick={handleSubmit}
+              disabled={creating}
             >
               Создать
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
 
@@ -133,12 +128,16 @@ export const Genres = () => {
       </div>
 
       <div className="results">
-        <DataGrid
-          rows={data}
-          columns={columns}
-          hideFooterPagination
-          hideFooterSelectedRowCount
-        />
+        {isLoading ? (
+          <TableSkeleton rows={5} columns={3} />
+        ) : (
+          <DataGrid
+            rows={genres || []}
+            columns={columns}
+            hideFooterPagination
+            hideFooterSelectedRowCount
+          />
+        )}
       </div>
     </>
   );

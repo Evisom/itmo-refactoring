@@ -21,3 +21,4 @@
     <property name="blankLinesBeforeFirstTopLevelClass" value="0" />
     <property name="blankLinesAfterPackage" value="1" />
 </configuration>
+

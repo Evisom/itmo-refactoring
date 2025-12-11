@@ -1,87 +1,62 @@
 "use client";
 
-import React, { useState } from "react";
-import useSWR from "swr";
+import React from "react";
 import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { DateField } from "@mui/x-date-pickers/DateField";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { enUS } from "date-fns/locale";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Progress } from "@/app/components/Progress";
-import { useAuth } from "@/app/components/AuthProvider";
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { TableSkeleton } from "@/shared/components/ui/Skeleton";
+import { useAuthors } from "@/features/books/hooks/useAuthors";
+import { useCreateAuthor } from "@/features/books/hooks/useCreateAuthor";
+import { useDeleteAuthor } from "@/features/books/hooks/useDeleteAuthor";
+import { useErrorHandler } from "@/shared/utils/useErrorHandler";
+import { authorFormSchema, type AuthorFormData } from "@/shared/validation/schemas";
 
 import "./page.scss";
-import { useErrorAlert } from "@/app/utils/useErrorAlert";
 export const Authors = () => {
-  const { token } = useAuth();
-  const { error, showError } = useErrorAlert();
+  const { error, handleError } = useErrorHandler();
+  const { authors, isLoading } = useAuthors();
+  const { createAuthor, isLoading: creating } = useCreateAuthor();
+  const { deleteAuthor, isLoading: deleting } = useDeleteAuthor();
 
-  const [formState, setFormState] = useState({
-    name: "",
-    surname: "",
-    birthDate: "",
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<AuthorFormData>({
+    resolver: zodResolver(authorFormSchema),
+    defaultValues: {
+      name: "",
+      surname: "",
+      birthDate: "",
+    },
   });
 
-  const { data, mutate } = useSWR(
-    [token ? `${config.API_URL}/library/authors` : null, token],
-    ([url, token]) => fetcher(url, token)
-  );
-
-  const handleInputChange =
-    (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFormState((prevState) => ({
-        ...prevState,
-        [field]: event.target.value,
-      }));
-    };
-
-  const handleDateChange = (newValue: Date | null) => {
-    if (newValue) {
-      const formattedDate = newValue.toISOString().split("T")[0];
-      setFormState({ ...formState, birthDate: formattedDate });
-    } else {
-      setFormState({ ...formState, birthDate: "" });
-    }
-  };
-
-  const isValidForm = () =>
-    /^\d{4}-\d{2}-\d{2}$/.test(formState.birthDate) &&
-    formState.name.trim() &&
-    formState.surname.trim();
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: AuthorFormData) => {
     try {
-      const response = await fetch(`${config.API_URL}/library/authors`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formState),
+      await createAuthor({
+        name: data.name.trim(),
+        surname: data.surname.trim(),
+        birthDate: data.birthDate || undefined,
       });
-      if (!response.ok) throw new Error("Ошибка при создании автора");
-      mutate();
+      reset();
     } catch (err) {
-      showError((err as Error).message);
+      handleError(err, "Authors.onSubmit");
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`${config.API_URL}/library/authors/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Ошибка при удалении автора");
-      mutate();
+      await deleteAuthor(id);
     } catch (err) {
-      showError((err as Error).message);
+      handleError(err, "Authors.handleDelete");
     }
   };
 
@@ -100,6 +75,7 @@ export const Authors = () => {
             variant="outlined"
             color="error"
             onClick={() => handleDelete(params.row.id)}
+            disabled={deleting}
           >
             Удалить
           </Button>
@@ -108,48 +84,78 @@ export const Authors = () => {
     },
   ];
 
-  if (!data) return <Progress />;
+  if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
     <>
       <Card variant="outlined" className="card">
         <CardContent>
-          <div className="form">
+          <form onSubmit={handleSubmit(onSubmit)} className="form">
             <div className="controls">
-              <TextField
-                label="Имя"
-                value={formState.name}
-                onChange={handleInputChange("name")}
+              <Controller
+                name="name"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Имя"
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                )}
               />
-              <TextField
-                label="Фамилия"
-                value={formState.surname}
-                onChange={handleInputChange("surname")}
+              <Controller
+                name="surname"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Фамилия"
+                    error={!!errors.surname}
+                    helperText={errors.surname?.message}
+                  />
+                )}
               />
-              <LocalizationProvider
-                dateAdapter={AdapterDateFns}
-                adapterLocale={enUS}
-              >
-                <DateField
-                  label="Дата рождения"
-                  format="yyyy-MM-dd"
-                  value={
-                    formState.birthDate ? new Date(formState.birthDate) : null
-                  }
-                  slotProps={{ textField: { error: false } }}
-                  onChange={handleDateChange}
-                />
-              </LocalizationProvider>
+              <Controller
+                name="birthDate"
+                control={control}
+                render={({ field }) => (
+                  <LocalizationProvider
+                    dateAdapter={AdapterDateFns}
+                    adapterLocale={enUS}
+                  >
+                    <DateField
+                      label="Дата рождения"
+                      format="yyyy-MM-dd"
+                      value={field.value ? new Date(field.value) : null}
+                      slotProps={{
+                        textField: {
+                          error: !!errors.birthDate,
+                          helperText: errors.birthDate?.message,
+                        },
+                      }}
+                      onChange={(newValue) => {
+                        if (newValue) {
+                          const formattedDate = newValue.toISOString().split("T")[0];
+                          field.onChange(formattedDate);
+                        } else {
+                          field.onChange("");
+                        }
+                      }}
+                    />
+                  </LocalizationProvider>
+                )}
+              />
             </div>
 
             <Button
+              type="submit"
               variant="outlined"
-              disabled={!isValidForm()}
-              onClick={handleSubmit}
+              disabled={creating}
             >
               Создать
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
 
@@ -158,12 +164,16 @@ export const Authors = () => {
       </div>
 
       <div className="results">
-        <DataGrid
-          rows={data}
-          columns={columns}
-          hideFooterPagination
-          hideFooterSelectedRowCount
-        />
+        {isLoading ? (
+          <TableSkeleton rows={5} columns={4} />
+        ) : (
+          <DataGrid
+            rows={authors || []}
+            columns={columns}
+            hideFooterPagination
+            hideFooterSelectedRowCount
+          />
+        )}
       </div>
     </>
   );

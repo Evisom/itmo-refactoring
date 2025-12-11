@@ -4,11 +4,10 @@ import {
   createContext,
   useEffect,
   useState,
-  useContext,
   ReactNode,
 } from "react";
 import Keycloak, { KeycloakInstance } from "keycloak-js";
-import { config } from "./../utils/config";
+import { config } from "@/shared/utils/config";
 
 interface AuthContextProps {
   keycloak: KeycloakInstance | null;
@@ -21,9 +20,11 @@ interface AuthContextProps {
   roles: string[];
   login: () => void;
   logout: () => void;
+  hasRole: (role: string) => boolean;
+  hasAnyRole: (roles: string[]) => boolean;
 }
 
-const AuthContext = createContext<AuthContextProps>({
+export const AuthContext = createContext<AuthContextProps>({
   keycloak: null,
   authenticated: false,
   loading: true,
@@ -34,6 +35,8 @@ const AuthContext = createContext<AuthContextProps>({
   roles: [],
   login: () => {},
   logout: () => {},
+  hasRole: () => false,
+  hasAnyRole: () => false,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -52,6 +55,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       realm: config.KC_REALM,
       clientId: config.KC_CLIENT_ID,
     });
+
+    let tokenRefreshInterval: NodeJS.Timeout | null = null;
 
     kc.init({
       onLoad: "check-sso",
@@ -72,6 +77,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAuthenticated(false);
         setLoading(false);
       });
+
+    // Обработка истечения токена
+    kc.onTokenExpired = () => {
+      kc.updateToken(30)
+        .then((refreshed) => {
+          if (refreshed) {
+            updateAuthState(kc, true);
+          }
+        })
+        .catch(() => {
+          // Если не удалось обновить токен, разлогиниваем пользователя
+          setAuthenticated(false);
+          setToken(null);
+          setUsername(null);
+          setUserId(null);
+          setEmail(null);
+          setRoles([]);
+        });
+    };
+
+    // Обработка ошибок аутентификации
+    kc.onAuthError = () => {
+      setAuthenticated(false);
+      setToken(null);
+      setUsername(null);
+      setUserId(null);
+      setEmail(null);
+      setRoles([]);
+    };
+
+    return () => {
+      if (tokenRefreshInterval) {
+        clearInterval(tokenRefreshInterval);
+      }
+    };
   }, []);
 
   const updateAuthState = (kc: KeycloakInstance, auth: boolean) => {
@@ -84,19 +124,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setLoading(false);
 
-    // Установка таймера для обновления токена
-    if (auth) {
-      setInterval(() => {
-        kc.updateToken(30).then((refreshed) => {
-          if (refreshed) {
-            setToken(kc.token || null);
-            setUsername(kc.tokenParsed?.preferred_username || null);
-            setUserId(kc.tokenParsed?.sub || null);
-            setEmail(kc.tokenParsed?.email || null);
-            setRoles(kc.tokenParsed?.realm_access?.roles || []);
-          }
-        });
-      }, 30000);
+    // Улучшенное обновление токена с очисткой интервала
+    if (auth && kc.tokenParsed?.exp) {
+      const tokenExpirationTime = (kc.tokenParsed.exp - Math.floor(Date.now() / 1000)) * 1000;
+      // Обновляем токен за 30 секунд до истечения
+      const refreshTime = Math.max(tokenExpirationTime - 30000, 0);
+
+      const refreshInterval = setInterval(() => {
+        kc.updateToken(30)
+          .then((refreshed) => {
+            if (refreshed) {
+              setToken(kc.token || null);
+              setUsername(kc.tokenParsed?.preferred_username || null);
+              setUserId(kc.tokenParsed?.sub || null);
+              setEmail(kc.tokenParsed?.email || null);
+              setRoles(kc.tokenParsed?.realm_access?.roles || []);
+            }
+          })
+          .catch(() => {
+            // Если не удалось обновить токен, разлогиниваем пользователя
+            setAuthenticated(false);
+            setToken(null);
+            setUsername(null);
+            setUserId(null);
+            setEmail(null);
+            setRoles([]);
+            clearInterval(refreshInterval);
+          });
+      }, refreshTime || 30000);
+
+      return () => {
+        clearInterval(refreshInterval);
+      };
     }
   };
 
@@ -116,6 +175,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setAuthenticated(false);
   };
 
+  const hasRole = (role: string): boolean => {
+    return roles.includes(role);
+  };
+
+  const hasAnyRole = (requiredRoles: string[]): boolean => {
+    return requiredRoles.some((role) => roles.includes(role));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -129,6 +196,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         roles,
         login,
         logout,
+        hasRole,
+        hasAnyRole,
       }}
     >
       {children}
@@ -136,4 +205,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);

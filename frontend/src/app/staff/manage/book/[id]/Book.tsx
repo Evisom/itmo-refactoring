@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import useSWR from "swr";
+import React, { useEffect } from "react";
 import {
   Autocomplete,
   Typography,
@@ -8,144 +7,122 @@ import {
   Box,
   Alert,
 } from "@mui/material";
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
-import { useAuth } from "@/app/components/AuthProvider";
-import { useErrorAlert } from "@/app/utils/useErrorAlert";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useErrorHandler } from "@/shared/utils/useErrorHandler";
 import { useRouter } from "next/navigation";
-import { Progress } from "@/app/components/Progress";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { usePublishers } from "@/features/books/hooks/usePublishers";
+import { useThemes } from "@/features/books/hooks/useThemes";
+import { useAuthors } from "@/features/books/hooks/useAuthors";
+import { useGenres } from "@/features/books/hooks/useGenres";
+import { useBook } from "@/features/books/hooks/useBook";
+import { useCreateBook } from "@/features/books/hooks/useCreateBook";
+import { useUpdateBook } from "@/features/books/hooks/useUpdateBook";
+import { useDeleteBook } from "@/features/books/hooks/useDeleteBook";
+import { bookFormSchema, type BookFormData } from "@/shared/validation/schemas";
 
-const Book = ({ type, id = -1 }) => {
+const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
   const router = useRouter();
+  const { error, handleError } = useErrorHandler();
 
-  const { token } = useAuth();
-  const { error, showError } = useErrorAlert();
+  const { publishers: publishersData, isLoading: publishersLoading } = usePublishers();
+  const { themes: themesData, isLoading: themesLoading } = useThemes();
+  const { authors: authorsData, isLoading: authorsLoading } = useAuthors();
+  const { genres: genresData, isLoading: genresLoading } = useGenres();
+  const { book: bookData, isLoading: bookLoading } = useBook(type === "edit" ? id : null);
+  const { createBook, isLoading: creating } = useCreateBook();
+  const { updateBook, isLoading: updating } = useUpdateBook();
+  const { deleteBook, isLoading: deleting } = useDeleteBook();
 
-  const { data: publishersData } = useSWR(
-    token ? [`${config.API_URL}/library/publishers`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
-  const { data: themesData } = useSWR(
-    token ? [`${config.API_URL}/library/themes`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
-  const { data: authorsData } = useSWR(
-    token ? [`${config.API_URL}/library/authors`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
-  const { data: genresData } = useSWR(
-    token ? [`${config.API_URL}/library/genres`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
-
-  const { data: bookData } = useSWR(
-    type === "edit" && token
-      ? [`${config.API_URL}/library/books/${id}`, token]
-      : null,
-    ([url, token]) => fetcher(url, token)
-  );
-
-  const [bookState, setBookState] = useState({
-    title: "",
-    publisher: null,
-    theme: null,
-    authors: null,
-    genre: null,
-    yearPublished: "",
-    isbn: "",
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<BookFormData>({
+    resolver: zodResolver(bookFormSchema),
+    defaultValues: {
+      title: "",
+      publisher: null,
+      theme: null,
+      authors: null,
+      genre: null,
+      yearPublished: "",
+      isbn: "",
+    },
   });
 
   useEffect(() => {
-    if (type === "edit" && bookData) {
-      setBookState({
+    if (type === "edit" && bookData && publishersData && themesData && authorsData && genresData) {
+      const author = bookData.authors && bookData.authors.length > 0
+        ? authorsData.find((a) => a.id === bookData.authors[0]?.id) || null
+        : null;
+      
+      reset({
         title: bookData.title || "",
         publisher:
-          publishersData?.find((p) => p.id === bookData?.publisher?.id) || null,
-        theme: themesData?.find((t) => t.id === bookData?.theme?.id) || null,
-        authors:
-          authorsData?.find((a) => a.id === bookData?.authors[0]?.id) || null,
-        genre: genresData?.find((g) => g.id === bookData?.genre?.id) || null,
-        yearPublished: bookData.yearPublished || "",
+          bookData.publisher
+            ? publishersData.find((p) => p.id === bookData.publisher?.id) || null
+            : null,
+        theme: bookData.theme
+          ? themesData.find((t) => t.id === bookData.theme?.id) || null
+          : null,
+        authors: author,
+        genre: bookData.genre
+          ? genresData.find((g) => g.id === bookData.genre?.id) || null
+          : null,
+        yearPublished: bookData.yearPublished?.toString() || "",
         isbn: bookData.isbn || "",
       });
     }
-  }, [type, bookData, publishersData, themesData, authorsData, genresData]);
+  }, [type, bookData?.id, publishersData?.length, themesData?.length, authorsData?.length, genresData?.length]);
 
-  const handleAutocompleteChange = (field) => (event, newValue) => {
-    setBookState((prevState) => ({
-      ...prevState,
-      [field]: newValue,
-    }));
-  };
+  const onSubmit = async (data: BookFormData) => {
+    try {
+      if (!data.genre?.id) {
+        handleError(new Error("Жанр обязателен"), "Book.onSubmit");
+        return;
+      }
+      if (!data.authors?.id) {
+        handleError(new Error("Автор обязателен"), "Book.onSubmit");
+        return;
+      }
+      
+      const payload = {
+        title: data.title,
+        isbn: data.isbn,
+        yearPublished: data.yearPublished ? parseInt(data.yearPublished, 10) : undefined,
+        genreId: data.genre.id,
+        themeId: data.theme?.id,
+        publisherId: data.publisher?.id,
+        authorIds: [data.authors.id],
+      };
 
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setBookState((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = () => {
-    const url =
-      type === "new"
-        ? `${config.API_URL}/library/newBook`
-        : `${config.API_URL}/library/books/${id}`;
-    const method = type === "new" ? "POST" : "PUT";
-
-    const payload = {
-      title: bookState.title,
-      publisher: bookState.publisher || null,
-      theme: bookState.theme || null,
-      authors: [bookState.authors],
-      genre: bookState.genre || null,
-      yearPublished: bookState.yearPublished,
-      isbn: bookState.isbn,
-    };
-
-    fetch(url, {
-      method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Не получается сохранить книгу");
+      if (type === "new") {
+        await createBook(payload);
+        // Переходим на главную страницу - кеш отключен, данные загрузятся заново
+        router.push("/");
+      } else {
+        await updateBook(id, payload);
         router.back();
-      })
-      .catch((err) => {
-        showError(err.message);
-      });
+      }
+    } catch (err) {
+      handleError(err, "Book.onSubmit");
+    }
   };
 
-  const handleDelete = () => {
-    fetch(`${config.API_URL}/library/books/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Не получается удалить книгу");
-        router.back();
-      })
-      .catch((err) => {
-        showError(err.message);
-      });
+  const handleDelete = async () => {
+    try {
+      await deleteBook(id);
+      router.back();
+    } catch (err) {
+      handleError(err, "Book.handleDelete");
+    }
   };
 
-  if (
-    !(
-      publishersData &&
-      themesData &&
-      authorsData &&
-      genresData &&
-      (bookData || type === "new")
-    )
-  ) {
-    return <Progress />;
+  if (publishersLoading || themesLoading || authorsLoading || genresLoading || (type === "edit" && bookLoading)) {
+    return <LoadingSpinner fullScreen />;
   }
   return (
     <Box sx={{ maxWidth: 600, mx: "auto", mt: 4 }}>
@@ -158,6 +135,7 @@ const Book = ({ type, id = -1 }) => {
             variant="outlined"
             color="error"
             onClick={handleDelete}
+            disabled={deleting}
             sx={{ height: "fit-content" }}
           >
             Удалить
@@ -169,75 +147,174 @@ const Book = ({ type, id = -1 }) => {
           {error}
         </Alert>
       )}
-      <TextField
-        label="Название книги"
-        name="title"
-        value={bookState.title}
-        onChange={handleInputChange}
-        fullWidth
-        margin="normal"
-      />
-      <TextField
-        label="Год публикации"
-        name="yearPublished"
-        type="number"
-        value={bookState.yearPublished}
-        onChange={handleInputChange}
-        fullWidth
-        margin="normal"
-      />
-      <TextField
-        label="ISBN"
-        name="isbn"
-        value={bookState.isbn}
-        onChange={handleInputChange}
-        fullWidth
-        margin="normal"
-      />
-      <Autocomplete
-        options={publishersData || []}
-        getOptionLabel={(option) => option.name}
-        value={bookState.publisher}
-        onChange={handleAutocompleteChange("publisher")}
-        renderInput={(params) => (
-          <TextField {...params} label="Издатель" margin="normal" fullWidth />
-        )}
-      />
-      <Autocomplete
-        options={themesData || []}
-        getOptionLabel={(option) => option.name}
-        value={bookState.theme}
-        onChange={handleAutocompleteChange("theme")}
-        renderInput={(params) => (
-          <TextField {...params} label="Тема" margin="normal" fullWidth />
-        )}
-      />
-      <Autocomplete
-        options={authorsData || []}
-        getOptionLabel={(option) => `${option.name} ${option.surname}`}
-        value={bookState.authors}
-        onChange={handleAutocompleteChange("authors")}
-        renderInput={(params) => (
-          <TextField {...params} label="Автор" margin="normal" fullWidth />
-        )}
-      />
-      <Autocomplete
-        options={genresData || []}
-        getOptionLabel={(option) => option.name}
-        value={bookState.genre}
-        onChange={handleAutocompleteChange("genre")}
-        renderInput={(params) => (
-          <TextField {...params} label="Жанр" margin="normal" fullWidth />
-        )}
-      />
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleSubmit}
-        sx={{ mt: 3 }}
-      >
-        {type === "new" ? "Создать книгу" : "Сохранить изменения"}
-      </Button>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Controller
+          name="title"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Название книги"
+              fullWidth
+              margin="normal"
+              error={!!errors.title}
+              helperText={errors.title?.message}
+            />
+          )}
+        />
+        <Controller
+          name="yearPublished"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Год публикации"
+              type="number"
+              fullWidth
+              margin="normal"
+              error={!!errors.yearPublished}
+              helperText={errors.yearPublished?.message}
+            />
+          )}
+        />
+        <Controller
+          name="isbn"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="ISBN"
+              fullWidth
+              margin="normal"
+              error={!!errors.isbn}
+              helperText={errors.isbn?.message}
+            />
+          )}
+        />
+        <Controller
+          name="publisher"
+          control={control}
+          render={({ field }) => (
+            <Autocomplete
+              options={publishersData || []}
+              getOptionLabel={(option) => option.name}
+              value={field.value}
+              onChange={(_event, newValue) => field.onChange(newValue)}
+              isOptionEqualToValue={(option, value) => {
+                if (!value) return false;
+                return option.id === value.id;
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Издатель"
+                  margin="normal"
+                  fullWidth
+                  error={!!errors.publisher}
+                  helperText={errors.publisher?.message}
+                />
+              )}
+            />
+          )}
+        />
+        <Controller
+          name="theme"
+          control={control}
+          render={({ field }) => (
+            <Autocomplete
+              options={themesData || []}
+              getOptionLabel={(option) => option.name}
+              value={field.value}
+              onChange={(_event, newValue) => field.onChange(newValue)}
+              isOptionEqualToValue={(option, value) => {
+                if (!value) return false;
+                return option.id === value.id;
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Тема"
+                  margin="normal"
+                  fullWidth
+                  error={!!errors.theme}
+                  helperText={errors.theme?.message}
+                />
+              )}
+            />
+          )}
+        />
+        <Controller
+          name="authors"
+          control={control}
+          render={({ field: { value, onChange } }) => (
+            <Autocomplete
+              options={authorsData || []}
+              getOptionLabel={(option) => {
+                if (!option) return "";
+                return `${option.name} ${option.surname}`;
+              }}
+              value={value || null}
+              onChange={(_event, newValue) => {
+                onChange(newValue);
+              }}
+              isOptionEqualToValue={(option, val) => {
+                if (!val || !option) return false;
+                return option.id === val.id;
+              }}
+              renderOption={(props, option) => (
+                <li {...props} key={`author-${option.id}`}>
+                  {`${option.name} ${option.surname}`}
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Автор"
+                  margin="normal"
+                  fullWidth
+                  error={!!errors.authors}
+                  helperText={errors.authors?.message}
+                />
+              )}
+            />
+          )}
+        />
+        <Controller
+          name="genre"
+          control={control}
+          render={({ field }) => (
+            <Autocomplete
+              options={genresData || []}
+              getOptionLabel={(option) => option.name}
+              value={field.value}
+              onChange={(_event, newValue) => field.onChange(newValue)}
+              isOptionEqualToValue={(option, value) => {
+                if (!value) return false;
+                return option.id === value.id;
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Жанр"
+                  margin="normal"
+                  fullWidth
+                  error={!!errors.genre}
+                  helperText={errors.genre?.message}
+                />
+              )}
+            />
+          )}
+        />
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          disabled={creating || updating}
+          sx={{ mt: 3 }}
+        >
+          {type === "new" ? "Создать книгу" : "Сохранить изменения"}
+        </Button>
+      </form>
     </Box>
   );
 };

@@ -9,3 +9,4 @@ public class ForbiddenException extends BaseException {
     super(message, "FORBIDDEN", cause);
   }
 }
+

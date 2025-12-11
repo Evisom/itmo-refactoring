@@ -1,78 +1,58 @@
 "use client";
 
-import React, { useState } from "react";
-
-import useSWR from "swr";
+import React from "react";
 import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import { Progress } from "@/app/components/Progress";
-import { useAuth } from "@/app/components/AuthProvider";
-
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { TableSkeleton } from "@/shared/components/ui/Skeleton";
+import { usePublishers } from "@/features/books/hooks/usePublishers";
+import { useCreatePublisher } from "@/features/books/hooks/useCreatePublisher";
+import { useDeletePublisher } from "@/features/books/hooks/useDeletePublisher";
+import { useErrorHandler } from "@/shared/utils/useErrorHandler";
+import { publisherFormSchema, type PublisherFormData } from "@/shared/validation/schemas";
 
 import "./page.scss";
-import { useErrorAlert } from "@/app/utils/useErrorAlert";
 
 export const Publishers = () => {
-  const { token } = useAuth();
-  const [formState, setFormState] = useState({
-    name: "",
-    website: "",
-    email: "",
+  const { error, handleError } = useErrorHandler();
+  const { publishers, isLoading } = usePublishers();
+  const { createPublisher, isLoading: creating } = useCreatePublisher();
+  const { deletePublisher, isLoading: deleting } = useDeletePublisher();
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<PublisherFormData>({
+    resolver: zodResolver(publisherFormSchema),
+    defaultValues: {
+      name: "",
+      website: "",
+      email: "",
+    },
   });
 
-  const { error, showError } = useErrorAlert();
-  const { data, mutate } = useSWR(
-    token ? [`${config.API_URL}/library/publishers`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
-
-  const handleInputChange =
-    (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFormState((prevState) => ({
-        ...prevState,
-        [field]: event.target.value,
-      }));
-    };
-
-  const isValidForm = () =>
-    formState.name.trim() &&
-    /^https?:\/\/[^\s]+$/.test(formState.website) &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formState.email);
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: PublisherFormData) => {
     try {
-      const response = await fetch(`${config.API_URL}/library/publishers`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formState),
+      await createPublisher({
+        name: data.name.trim(),
+        website: data.website?.trim() || undefined,
+        email: data.email?.trim() || undefined,
       });
-      if (!response.ok) throw new Error("Ошибка при создании издателя");
-      mutate();
+      reset();
     } catch (err) {
-      showError((err as Error).message);
+      handleError(err, "Publishers.onSubmit");
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(
-        `${config.API_URL}/library/publishers/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!response.ok) throw new Error("Ошибка при удалении издателя");
-      mutate();
+      await deletePublisher(id);
     } catch (err) {
-      showError((err as Error).message);
+      handleError(err, "Publishers.handleDelete");
     }
   };
 
@@ -89,7 +69,8 @@ export const Publishers = () => {
         <Button
           variant="outlined"
           color="error"
-          onClick={() => handleDelete(params.row.id)}
+            onClick={() => handleDelete(params.row.id)}
+            disabled={deleting}
         >
           Удалить
         </Button>
@@ -97,39 +78,61 @@ export const Publishers = () => {
     },
   ];
 
-  if (!data) return <Progress />;
+  if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
     <>
       <Card variant="outlined" className="card">
         <CardContent>
-          <div className="form">
+          <form onSubmit={handleSubmit(onSubmit)} className="form">
             <div className="controls">
-              <TextField
-                label="Название"
-                value={formState.name}
-                onChange={handleInputChange("name")}
+              <Controller
+                name="name"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Название"
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                )}
               />
-              <TextField
-                label="Веб-сайт"
-                value={formState.website}
-                onChange={handleInputChange("website")}
+              <Controller
+                name="website"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Веб-сайт"
+                    error={!!errors.website}
+                    helperText={errors.website?.message}
+                  />
+                )}
               />
-              <TextField
-                label="Email"
-                value={formState.email}
-                onChange={handleInputChange("email")}
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Email"
+                    type="email"
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                  />
+                )}
               />
             </div>
 
             <Button
+              type="submit"
               variant="outlined"
-              disabled={!isValidForm()}
-              onClick={handleSubmit}
+              disabled={creating}
             >
               Создать
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
 
@@ -138,12 +141,16 @@ export const Publishers = () => {
       </div>
 
       <div className="results">
-        <DataGrid
-          rows={data}
-          columns={columns}
-          hideFooterPagination
-          hideFooterSelectedRowCount
-        />
+        {isLoading ? (
+          <TableSkeleton rows={5} columns={4} />
+        ) : (
+          <DataGrid
+            rows={publishers || []}
+            columns={columns}
+            hideFooterPagination
+            hideFooterSelectedRowCount
+          />
+        )}
       </div>
     </>
   );

@@ -9,3 +9,4 @@ public class BusinessLogicException extends BaseException {
     super(message, "BUSINESS_LOGIC_ERROR", cause);
   }
 }
+

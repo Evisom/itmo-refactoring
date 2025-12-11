@@ -30,3 +30,4 @@ echo "Formatting shared-library..."
 find shared-library/src -name "*.java" -exec java -jar "$FORMATTER_JAR" -i {} \;
 
 echo "Formatting complete!"
+

@@ -2,15 +2,15 @@
 
 import React from "react";
 import Book from "./Book";
-import { useRequireAuth } from "@/app/utils/useRequireAuth";
-import { Progress } from "@/app/components/Progress";
+import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 
-const BookPage = ({ params }: { params: any }) => {
+const BookPage = ({ params }: { params: { id: string } }) => {
   const { id } = React.use(params);
   const { loading } = useRequireAuth();
 
   if (loading) {
-    return <Progress />;
+    return <LoadingSpinner fullScreen />;
   }
 
   if (id === "new") {

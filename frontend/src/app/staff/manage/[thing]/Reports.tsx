@@ -1,10 +1,6 @@
-import { useAuth } from "@/app/components/AuthProvider";
-import { config } from "@/app/utils/config";
-import { fetcher } from "@/app/utils/fetcher";
+import { useLibraries } from "@/features/books/hooks/useLibraries";
 import {
   Button,
-  Grid,
-  InputLabel,
   MenuItem,
   Select,
   TextField,
@@ -16,19 +12,14 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { enUS } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import useSWR from "swr";
 
 const Reports = () => {
   const [email, setEmail] = useState("");
   const router = useRouter();
-  const { token } = useAuth();
   const isValidEmail = () =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email === "";
   const [selectedLibrary, setSelectedLibrary] = useState<number | null>(null);
-  const { data: librariesData, error: librariesError } = useSWR(
-    token ? [`${config.API_URL}/library/allLibraries`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
+  const { libraries: librariesData } = useLibraries();
 
   const [date, setDate] = useState("");
 
@@ -37,7 +28,7 @@ const Reports = () => {
       const formattedDate = newValue.toISOString().split("T")[0];
       setDate(formattedDate);
     } else {
-      setDate("");
+      setDate();
     }
   };
   return (

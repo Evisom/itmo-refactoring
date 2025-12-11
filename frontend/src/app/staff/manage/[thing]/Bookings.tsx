@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import useSWR from "swr";
 import {
   Typography,
   Card,
@@ -23,15 +22,17 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
-import { useAuth } from "@/app/components/AuthProvider";
-import { Progress } from "@/app/components/Progress";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useLibraries } from "@/features/books/hooks/useLibraries";
+import { useTransactions } from "@/features/transactions/hooks/useTransactions";
+import { useApproveTransaction } from "@/features/transactions/hooks/useApproveTransaction";
+import { useDeclineTransaction } from "@/features/transactions/hooks/useDeclineTransaction";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { transactionDeclineFormSchema, type TransactionDeclineFormData } from "@/shared/validation/schemas";
 
 const ApprovalsPage = () => {
-  const { token } = useAuth();
   const [selectedLibrary, setSelectedLibrary] = useState<number | null>(null);
-  const [declineReason, setDeclineReason] = useState("");
   const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
   const [decliningRequestId, setDecliningRequestId] = useState<number | null>(
     null
@@ -39,24 +40,30 @@ const ApprovalsPage = () => {
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
-    severity: "success", // Can be 'success' or 'error'
+    severity: "success" as "success" | "error",
   });
 
-  const { data: librariesData, error: librariesError } = useSWR(
-    [token ? `${config.API_URL}/library/allLibraries` : null, token],
-    ([url, token]) => fetcher(url, token)
+  const { libraries: librariesData, error: librariesError } = useLibraries();
+  const { transactions: operationsData, isLoading: transactionsLoading, error: operationsError, mutate } = useTransactions(
+    selectedLibrary ? { libraryId: selectedLibrary } : undefined
   );
+  
+  // Фильтруем PENDING транзакции на клиенте
+  const pendingTransactions = operationsData?.filter((t) => t.status === "PENDING") || [];
+  const { approveTransaction, isLoading: approving } = useApproveTransaction();
+  const { declineTransaction, isLoading: declining } = useDeclineTransaction();
 
   const {
-    data: operationsData,
-    error: operationsError,
-    mutate,
-  } = useSWR(
-    selectedLibrary
-      ? [`${config.OPERATION_API_URL}/operations?libraryId=${selectedLibrary}`, token]
-      : null,
-    ([url, token]) => fetcher(url, token)
-  );
+    control: declineControl,
+    handleSubmit: handleDeclineSubmit,
+    formState: { errors: declineErrors },
+    reset: resetDecline,
+  } = useForm<TransactionDeclineFormData>({
+    resolver: zodResolver(transactionDeclineFormSchema),
+    defaultValues: {
+      comment: "",
+    },
+  });
 
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -64,18 +71,13 @@ const ApprovalsPage = () => {
 
   const handleApprove = async (requestId: number) => {
     try {
-      await fetch(`${config.OPERATION_API_URL}/operations/approve/${requestId}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await approveTransaction(requestId);
       setSnackbar({
         open: true,
         message: "Заявка успешно одобрена",
         severity: "success",
       });
-      mutate(); // Refresh the list of requests
+      mutate();
     } catch (error) {
       console.error("Ошибка при одобрении заявки:", error);
       setSnackbar({
@@ -86,28 +88,19 @@ const ApprovalsPage = () => {
     }
   };
 
-  const handleDecline = async () => {
-    if (!decliningRequestId || !declineReason.trim()) return;
+  const onDeclineSubmit = async (data: TransactionDeclineFormData) => {
+    if (!decliningRequestId) return;
 
     try {
-      await fetch(
-        `${config.OPERATION_API_URL}/operations/decline/${decliningRequestId}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ comment: declineReason }),
-        }
-      );
+      await declineTransaction(decliningRequestId, { comment: data.comment });
       setSnackbar({
         open: true,
         message: "Заявка успешно отклонена",
         severity: "success",
       });
       setDeclineDialogOpen(false);
-      mutate(); // Refresh the list of requests
+      resetDecline();
+      mutate();
     } catch (error) {
       console.error("Ошибка при отклонении заявки:", error);
       setSnackbar({
@@ -118,7 +111,17 @@ const ApprovalsPage = () => {
     }
   };
 
-  if (!librariesData) return <Progress />;
+  const handleOpenDeclineDialog = (requestId: number) => {
+    setDecliningRequestId(requestId);
+    setDeclineDialogOpen(true);
+  };
+
+  const handleCloseDeclineDialog = () => {
+    setDeclineDialogOpen(false);
+    resetDecline();
+  };
+
+  if (!librariesData) return <LoadingSpinner fullScreen />;
   if (librariesError)
     return <Typography color="error">Ошибка загрузки библиотек</Typography>;
   if (operationsError)
@@ -138,17 +141,21 @@ const ApprovalsPage = () => {
             <MenuItem value="" disabled>
               Выберите филиал
             </MenuItem>
-            {librariesData.map((library) => (
+            {librariesData && librariesData.length > 0 ? librariesData.map((library) => (
               <MenuItem key={library.id} value={library.id}>
                 {library.name}
               </MenuItem>
-            ))}
+            )) : (
+              <MenuItem value="" disabled>
+                Нет библиотек
+              </MenuItem>
+            )}
           </Select>
         </CardContent>
       </Card>
 
       {/* Reservation Requests */}
-      {selectedLibrary && operationsData ? (
+      {selectedLibrary ? (
         <TableContainer component={Card}>
           <Table>
             <TableHead>
@@ -161,24 +168,35 @@ const ApprovalsPage = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {operationsData && operationsData.length > 0 ? (
-                operationsData.map((request) => (
+              {transactionsLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    <LoadingSpinner />
+                  </TableCell>
+                </TableRow>
+              ) : pendingTransactions && pendingTransactions.length > 0 ? (
+                pendingTransactions.map((request) => (
                   <TableRow key={request.id}>
-                    <TableCell>{request.title}</TableCell>
+                    <TableCell>{request.title || request.bookCopy?.book?.title || "Неизвестно"}</TableCell>
                     <TableCell>
                       {request.authors && request.authors.length > 0
                         ? request.authors
-                            .map((author) => `${author.name} ${author.surname}`)
+                            .map((author: { name: string; surname: string }) => `${author.name} ${author.surname}`)
+                            .join(", ")
+                        : request.bookCopy?.book?.authors && request.bookCopy.book.authors.length > 0
+                        ? request.bookCopy.book.authors
+                            .map((author: { name: string; surname: string }) => `${author.name} ${author.surname}`)
                             .join(", ")
                         : "Не указан"}
                     </TableCell>
-                    <TableCell>{request.inventoryId}</TableCell>
+                    <TableCell>{request.inventoryId || request.bookCopy?.inventoryNumber || "Не указан"}</TableCell>
                     <TableCell>{request.status}</TableCell>
                     <TableCell>
                       <Button
                         variant="contained"
                         color="primary"
                         onClick={() => handleApprove(request.id)}
+                        disabled={approving}
                       >
                         Одобрить
                       </Button>
@@ -186,10 +204,8 @@ const ApprovalsPage = () => {
                         variant="outlined"
                         color="error"
                         style={{ marginLeft: "10px" }}
-                        onClick={() => {
-                          setDecliningRequestId(request.id);
-                          setDeclineDialogOpen(true);
-                        }}
+                        onClick={() => handleOpenDeclineDialog(request.id)}
+                        disabled={declining}
                       >
                         Отклонить
                       </Button>
@@ -206,34 +222,42 @@ const ApprovalsPage = () => {
             </TableBody>
           </Table>
         </TableContainer>
-      ) : (
-        selectedLibrary && <Progress />
-      )}
+      ) : null}
 
       {/* Decline Reason Dialog */}
       <Dialog
         open={declineDialogOpen}
-        onClose={() => setDeclineDialogOpen(false)}
+        onClose={handleCloseDeclineDialog}
       >
-        <DialogTitle>Причина отказа</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Причина"
-            multiline
-            rows={4}
-            fullWidth
-            value={declineReason}
-            onChange={(e) => setDeclineReason(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeclineDialogOpen(false)} color="primary">
-            Отмена
-          </Button>
-          <Button onClick={handleDecline} color="error">
-            Отклонить
-          </Button>
-        </DialogActions>
+        <form onSubmit={handleDeclineSubmit(onDeclineSubmit)}>
+          <DialogTitle>Причина отказа</DialogTitle>
+          <DialogContent>
+            <Controller
+              name="comment"
+              control={declineControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Причина"
+                  multiline
+                  rows={4}
+                  fullWidth
+                  error={!!declineErrors.comment}
+                  helperText={declineErrors.comment?.message}
+                  sx={{ mt: 1 }}
+                />
+              )}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeclineDialog} color="primary" type="button">
+              Отмена
+            </Button>
+            <Button type="submit" color="error" disabled={declining}>
+              Отклонить
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
       {/* Snackbar for Feedback */}

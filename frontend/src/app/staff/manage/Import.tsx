@@ -11,8 +11,9 @@ import {
   Box,
   Input,
 } from "@mui/material";
-import { useAuth } from "@/app/components/AuthProvider";
-import { config } from "@/app/utils/config";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { config } from "@/shared/utils/config";
+import apiFetch from "@/shared/services/api-fetch-helper";
 
 const CsvImportPage = () => {
   const { token } = useAuth();
@@ -46,29 +47,18 @@ const CsvImportPage = () => {
     formData.append("file", file);
 
     try {
-      const response = await fetch(`${config.API_URL}/library/upload`, {
+      await apiFetch(`${config.API_V2_URL}/libraries/import`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: formData,
+        token,
       });
 
-      if (response.ok) {
-        setSnackbar({
-          open: true,
-          message: "Файл успешно импортирован",
-          severity: "success",
-        });
-        setFile(null); // Сбросить выбранный файл после успешной загрузки
-      } else {
-        const errorData = await response.json();
-        setSnackbar({
-          open: true,
-          message: errorData.message || "Ошибка при импорте файла",
-          severity: "error",
-        });
-      }
+      setSnackbar({
+        open: true,
+        message: "Файл успешно импортирован",
+        severity: "success",
+      });
+      setFile(null);
     } catch (error) {
       console.error("Ошибка загрузки файла:", error);
       setSnackbar({

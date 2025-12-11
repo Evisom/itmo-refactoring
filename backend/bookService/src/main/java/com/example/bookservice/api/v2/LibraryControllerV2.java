@@ -37,3 +37,4 @@ public class LibraryControllerV2 {
     return ResponseEntity.status(HttpStatus.CREATED).body(libraryService.create(request));
   }
 }
+

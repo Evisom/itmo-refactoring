@@ -11,16 +11,15 @@ import {
   Alert,
   Box,
 } from "@mui/material";
-import { config } from "@/app/utils/config";
-import { useAuth } from "@/app/components/AuthProvider";
+import { useReturnTransaction } from "@/features/transactions/hooks/useReturnTransaction";
 
 const Return = () => {
-  const { token } = useAuth();
+  const { returnTransaction, isLoading: returning } = useReturnTransaction();
   const [invNumber, setInvNumber] = useState("");
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
-    severity: "success", // Can be 'success' or 'error'
+    severity: "success" as "success" | "error",
   });
 
   const handleSnackbarClose = () => {
@@ -38,30 +37,13 @@ const Return = () => {
     }
 
     try {
-      const response = await fetch(`${config.OPERATION_API_URL}/operations/return`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ invNumber }),
+      await returnTransaction({ invNumber: invNumber.trim() });
+      setSnackbar({
+        open: true,
+        message: "Книга успешно возвращена",
+        severity: "success",
       });
-
-      if (response.ok) {
-        setSnackbar({
-          open: true,
-          message: "Книга успешно возвращена",
-          severity: "success",
-        });
-        setInvNumber(""); // Clear the input field after successful return
-      } else {
-        const errorData = await response.json();
-        setSnackbar({
-          open: true,
-          message: errorData.message || "Ошибка при возврате книги",
-          severity: "error",
-        });
-      }
+      setInvNumber("");
     } catch (error) {
       console.error("Ошибка при возврате книги:", error);
       setSnackbar({
@@ -96,6 +78,7 @@ const Return = () => {
             variant="contained"
             color="primary"
             onClick={handleReturn}
+            disabled={returning}
             fullWidth
             sx={{ marginTop: "10px" }}
           >

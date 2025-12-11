@@ -1,16 +1,16 @@
 "use client";
 import { Button, Typography } from "@mui/material";
-import { Progress } from "../components/Progress";
-import { useRequireAuth } from "../utils/useRequireAuth";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 import "./page.scss";
-import { useAuth } from "../components/AuthProvider";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 const StaffPage = () => {
   const { authenticated, loading } = useRequireAuth({
     requiredRole: "ROLE_LIBRARIAN",
   });
   const { roles } = useAuth();
   if (loading || !authenticated) {
-    return <Progress />;
+    return <LoadingSpinner fullScreen />;
   }
 
   const librarianMethods = [

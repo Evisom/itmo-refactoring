@@ -9,3 +9,4 @@ public class ConflictException extends BaseException {
     super(message, "CONFLICT", cause);
   }
 }
+
