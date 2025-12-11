@@ -154,3 +154,4 @@ export const getUserFriendlyMessage = (parsedError: ParsedError): string => {
 
   return parsedError.message;
 };
+

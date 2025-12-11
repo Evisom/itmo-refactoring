@@ -9,3 +9,4 @@ public interface EndpointsV2 {
   String LIBRARIES = "/api/v2/libraries";
   String COPIES = "/api/v2/copies";
 }
+

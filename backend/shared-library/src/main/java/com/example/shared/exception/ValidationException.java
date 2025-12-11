@@ -9,3 +9,4 @@ public class ValidationException extends BaseException {
     super(message, "VALIDATION_ERROR", cause);
   }
 }
+

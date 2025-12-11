@@ -22,3 +22,4 @@ export const useHasAnyRole = (requiredRoles: string[]): boolean => {
 };
 
 export default useAuth;
+

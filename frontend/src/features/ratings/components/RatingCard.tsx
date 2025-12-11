@@ -1,37 +1,29 @@
-"use client";
-
 import React from "react";
-import { Card, CardContent, Typography, Rating, Box } from "@mui/material";
-import { RatingResponse } from "@/features/ratings/services/ratings-api";
+import { Card, CardContent, Typography, Rating } from "@mui/material";
+import { RatingResponse } from "@/shared/types/api";
 
 interface RatingCardProps {
   rating: RatingResponse;
 }
 
-export const RatingCard = ({ rating }: RatingCardProps) => {
-  const username = rating.user?.username || "Анонимный пользователь";
-  const date = new Date(rating.createdAt).toLocaleDateString("ru-RU");
-
+export const RatingCard: React.FC<RatingCardProps> = ({ rating }) => {
   return (
-    <Card>
+    <Card sx={{ marginBottom: "16px", marginTop: "16px" }}>
       <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-          <Typography variant="subtitle1" component="div">
-            {username}
-          </Typography>
-          <Rating value={rating.rating} readOnly size="small" />
-        </Box>
-        {rating.comment && (
-          <Typography variant="body2" color="text.secondary" paragraph>
-            {rating.comment}
+        <Rating value={rating.rating} readOnly />
+        <Typography>{rating.comment || "Без текста"}</Typography>
+        <Typography variant="body2" color="textSecondary">
+          {new Date(rating.createdAt).toLocaleString() || "Неизвестное время"}
+        </Typography>
+        {rating.user && (
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+            Пользователь: {rating.user.username}
           </Typography>
         )}
-        <Typography variant="caption" color="text.secondary">
-          {date}
-        </Typography>
       </CardContent>
     </Card>
   );
 };
 
 export default RatingCard;
+

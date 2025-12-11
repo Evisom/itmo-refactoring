@@ -1,93 +1,76 @@
-"use client";
-
 import React from "react";
 import { Card, CardContent, Typography, Link } from "@mui/material";
+import { BookResponse } from "@/shared/types/api";
 import BookCover from "./BookCover";
-import NextLink from "next/link";
 
 interface BookCardProps {
-  id: number;
-  title: string;
-  authors: Array<{ name: string; surname: string }>;
-  yearPublished?: number;
-  genre?: { name: string };
-  theme?: { name: string };
-  publisher?: { name: string };
-  rating?: number;
-  copiesCount?: number;
+  book: BookResponse;
+  onClick?: (bookId: number) => void;
 }
 
-export const BookCard = ({
-  id,
-  title,
-  authors,
-  yearPublished,
-  genre,
-  theme,
-  publisher,
-  rating,
-  copiesCount,
-}: BookCardProps) => {
-  const authorsString =
-    authors && authors.length > 0
-      ? authors.map((a) => `${a.name} ${a.surname}`).join(", ")
-      : "Неизвестный автор";
+export const BookCard: React.FC<BookCardProps> = ({ book, onClick }) => {
+  const handleClick = () => {
+    if (onClick) {
+      onClick(book.id);
+    }
+  };
 
   return (
-    <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <NextLink href={`/book/${id}`} passHref legacyBehavior>
-        <Link sx={{ textDecoration: "none", color: "inherit" }}>
+    <Card sx={{ height: "404px" }}>
+      {onClick ? (
+        <Link
+          href={`/book/${book.id}`}
+          sx={{ textDecoration: "none", cursor: "pointer" }}
+          onClick={(e) => {
+            e.preventDefault();
+            handleClick();
+          }}
+        >
           <BookCover
-            title={title}
-            authors={authors.map((a) => `${a.name} ${a.surname}`)}
-            id={id}
+            title={book.title}
+            authors={book.authors.map(
+              (author) => `${author.name} ${author.surname}`
+            )}
+            id={book.id}
           />
         </Link>
-      </NextLink>
-      <CardContent sx={{ flexGrow: 1 }}>
-        <NextLink href={`/book/${id}`} passHref legacyBehavior>
-          <Link sx={{ textDecoration: "none", color: "inherit" }}>
-            <Typography variant="h6" component="div" gutterBottom>
-              {title}
-            </Typography>
-          </Link>
-        </NextLink>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          {authorsString}
+      ) : (
+        <Link href={`/book/${book.id}`} sx={{ textDecoration: "none" }}>
+          <BookCover
+            title={book.title}
+            authors={book.authors.map(
+              (author) => `${author.name} ${author.surname}`
+            )}
+            id={book.id}
+          />
+        </Link>
+      )}
+      <CardContent>
+        <Typography variant="h6">{book.title}</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Автор:{" "}
+          {book.authors.length > 0
+            ? book.authors
+                .map((author) => `${author.name} ${author.surname}`)
+                .join(", ")
+            : "Не указан"}
         </Typography>
-        {yearPublished && (
-          <Typography variant="body2" color="text.secondary">
-            Год: {yearPublished}
-          </Typography>
-        )}
-        {genre && (
-          <Typography variant="body2" color="text.secondary">
-            Жанр: {genre.name}
-          </Typography>
-        )}
-        {theme && (
-          <Typography variant="body2" color="text.secondary">
-            Тема: {theme.name}
-          </Typography>
-        )}
-        {publisher && (
-          <Typography variant="body2" color="text.secondary">
-            Издательство: {publisher.name}
-          </Typography>
-        )}
-        {rating !== undefined && (
-          <Typography variant="body2" color="text.secondary">
-            Рейтинг: {rating.toFixed(1)}
-          </Typography>
-        )}
-        {copiesCount !== undefined && (
-          <Typography variant="body2" color="text.secondary">
-            Экземпляров: {copiesCount}
-          </Typography>
-        )}
+        <Typography variant="body2" color="text.secondary">
+          Жанр: {book.genre?.name || "Не указан"}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Тема: {book.theme?.name || "Не указана"}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Издатель: {book.publisher?.name || "Не указан"}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Рейтинг: {book.rating || "-"}
+        </Typography>
       </CardContent>
     </Card>
   );
 };
 
 export default BookCard;
+

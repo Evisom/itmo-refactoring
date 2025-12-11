@@ -34,3 +34,4 @@ export const useCreateGenre = () => {
 };
 
 export default useCreateGenre;
+

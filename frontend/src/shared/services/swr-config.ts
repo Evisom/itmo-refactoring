@@ -30,3 +30,4 @@ export const defaultSWROptions: SWRConfiguration = {
 };
 
 export default swrConfig;
+

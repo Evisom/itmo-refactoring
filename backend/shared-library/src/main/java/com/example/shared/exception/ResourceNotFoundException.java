@@ -9,3 +9,4 @@ public class ResourceNotFoundException extends BaseException {
     super(message, "RESOURCE_NOT_FOUND", cause);
   }
 }
+

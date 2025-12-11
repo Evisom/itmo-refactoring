@@ -1,72 +1,72 @@
-"use client";
-
 import React from "react";
-import { Card, CardContent, Typography, Chip, Box } from "@mui/material";
-import { TransactionResponse } from "@/features/transactions/services/transactions-api";
+import { Card, CardContent, Typography, Chip, Button } from "@mui/material";
+import { TransactionResponse } from "@/shared/types/api";
 
 interface TransactionCardProps {
   transaction: TransactionResponse;
-  onClick?: () => void;
+  onCancel?: (transactionId: number) => void;
+  isCancelling?: boolean;
 }
 
-const statusColors: Record<string, "default" | "primary" | "success" | "warning" | "error"> = {
-  PENDING: "warning",
-  APPROVED: "success",
-  DECLINED: "error",
-  RETURNED: "primary",
-  CANCELLED: "default",
+const getChipColor = (status: string): "error" | "success" | "primary" | "default" => {
+  switch (status) {
+    case "REJECTED":
+    case "DECLINED":
+      return "error";
+    case "APPROVED":
+    case "RETURNED":
+      return "success";
+    case "PENDING":
+      return "primary";
+    default:
+      return "default";
+  }
 };
 
-const statusLabels: Record<string, string> = {
-  PENDING: "Ожидает",
-  APPROVED: "Одобрена",
-  DECLINED: "Отклонена",
-  RETURNED: "Возвращена",
-  CANCELLED: "Отменена",
-};
-
-export const TransactionCard = ({ transaction, onClick }: TransactionCardProps) => {
-  const bookTitle = transaction.bookCopy?.book?.title || "Неизвестная книга";
-  const libraryName = transaction.bookCopy?.library?.name || "Неизвестная библиотека";
-  const authors = transaction.bookCopy?.book?.authors
-    ?.map((a) => `${a.name} ${a.surname}`)
-    .join(", ") || "Неизвестный автор";
-
+export const TransactionCard: React.FC<TransactionCardProps> = ({
+  transaction,
+  onCancel,
+  isCancelling = false,
+}) => {
   return (
-    <Card
-      sx={{
-        cursor: onClick ? "pointer" : "default",
-        "&:hover": onClick ? { boxShadow: 4 } : {},
-      }}
-      onClick={onClick}
-    >
+    <Card>
       <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-          <Typography variant="h6" component="div">
-            {bookTitle}
-          </Typography>
-          <Chip
-            label={statusLabels[transaction.status] || transaction.status}
-            color={statusColors[transaction.status] || "default"}
-            size="small"
-          />
-        </Box>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Автор: {authors}
+        <Typography variant="subtitle1" color="textSecondary">
+          {new Date(transaction.createdAt).toLocaleString()}
         </Typography>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Библиотека: {libraryName}
+        <Typography variant="h6">Бронирование книги</Typography>
+        <Typography>
+          Книга: {transaction.bookCopy?.book?.title || "Неизвестно"} —{" "}
+          {transaction.bookCopy?.book?.authors
+            ? transaction.bookCopy.book.authors
+                .map((a: { name: string; surname: string }) => `${a.name} ${a.surname}`)
+                .join(", ")
+            : "Не указан"}
         </Typography>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Инвентарный номер: {transaction.bookCopy?.inventoryNumber || "N/A"}
+        <Typography>
+          Библиотека: {transaction.bookCopy?.library?.name || "Не указана"}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Создано: {new Date(transaction.createdAt).toLocaleDateString("ru-RU")}
+        <Typography>
+          Инвентарный номер: {transaction.bookCopy?.inventoryNumber || "Не указан"}
         </Typography>
-        {transaction.updatedAt && (
-          <Typography variant="body2" color="text.secondary">
-            Обновлено: {new Date(transaction.updatedAt).toLocaleDateString("ru-RU")}
-          </Typography>
+
+        <Chip
+          sx={{ margin: "12px 0" }}
+          label={transaction.status}
+          color={getChipColor(transaction.status)}
+          variant="outlined"
+        />
+        {transaction.status === "PENDING" && onCancel && (
+          <Button
+            sx={{ marginTop: "16px" }}
+            variant="contained"
+            fullWidth
+            color="error"
+            onClick={() => onCancel(transaction.id)}
+            disabled={isCancelling}
+          >
+            Отменить
+          </Button>
         )}
       </CardContent>
     </Card>
@@ -74,3 +74,4 @@ export const TransactionCard = ({ transaction, onClick }: TransactionCardProps) 
 };
 
 export default TransactionCard;
+

@@ -82,3 +82,4 @@ export const ListSkeleton = ({ items = 5 }: { items?: number }) => {
 };
 
 export default Skeleton;
+

@@ -1,0 +1,18 @@
+.books-page {
+  .filters {
+    .filters-header {
+      margin-bottom: 16px;
+    }
+
+    .filters-body {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .results-body {
+      margin-top: 24px;
+    }
+  }
+}
+

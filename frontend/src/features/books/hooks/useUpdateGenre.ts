@@ -34,3 +34,4 @@ export const useUpdateGenre = () => {
 };
 
 export default useUpdateGenre;
+

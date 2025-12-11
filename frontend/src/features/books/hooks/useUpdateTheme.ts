@@ -34,3 +34,4 @@ export const useUpdateTheme = () => {
 };
 
 export default useUpdateTheme;
+

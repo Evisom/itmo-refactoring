@@ -32,3 +32,4 @@ export const useRatings = (params?: UseRatingsParams) => {
 };
 
 export default useRatings;
+

@@ -9,3 +9,4 @@ public class UnauthorizedException extends BaseException {
     super(message, "UNAUTHORIZED", cause);
   }
 }
+

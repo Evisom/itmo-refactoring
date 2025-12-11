@@ -34,3 +34,4 @@ export const useUpdateAuthor = () => {
 };
 
 export default useUpdateAuthor;
+
