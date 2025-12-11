@@ -200,7 +200,7 @@ dist
 
 # Serverless directories
 .serverless/
-
+commit.sh
 # FuseBox cache
 .fusebox/
 
