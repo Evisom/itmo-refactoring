@@ -18,12 +18,14 @@ import com.example.shared.model.Theme;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookService {
@@ -91,14 +93,20 @@ public class BookService {
 
   @Transactional
   public BookResponse createBook(BookCreateRequest request) {
-    Book bookFromISBN = bookRepository.findBookByISBN(request.getIsbn());
-    if (bookFromISBN != null) {
-      throw new ConflictException("Book already exist");
-    }
+    try {
+      Book bookFromISBN = bookRepository.findBookByISBN(request.getIsbn());
+      if (bookFromISBN != null) {
+        throw new ConflictException("Book already exist");
+      }
 
-    Book book = toEntity(request);
-    Book savedBook = bookRepository.save(book);
-    return bookMapper.toResponse(savedBook);
+      Book book = toEntity(request);
+      Book savedBook = bookRepository.save(book);
+      BookResponse response = bookMapper.toResponse(savedBook);
+      return response;
+    } catch (Exception e) {
+      log.error("Error creating book: {}", e.getMessage(), e);
+      throw e;
+    }
   }
 
   @Transactional
