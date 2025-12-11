@@ -1,6 +1,7 @@
 package com.example.operationservice.context.book.model;
 
-import com.example.operationservice.context.library.model.Library;
+import com.example.shared.model.Book;
+import com.example.shared.model.Library;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

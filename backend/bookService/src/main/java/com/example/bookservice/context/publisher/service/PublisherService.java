@@ -1,6 +1,6 @@
 package com.example.bookservice.context.publisher.service;
 
-import com.example.bookservice.context.publisher.model.Publisher;
+import com.example.shared.model.Publisher;
 import com.example.bookservice.context.publisher.repository.PublisherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

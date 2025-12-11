@@ -1,7 +1,7 @@
 package com.example.operationservice.context.unifieddata;
 
 import com.example.operationservice.context.author.model.AuthorModel;
-import com.example.operationservice.context.library.model.Library;
+import com.example.shared.model.Library;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

@@ -1,10 +1,10 @@
 package com.example.bookservice.context.book.service;
 
-import com.example.bookservice.context.book.model.Book;
+import com.example.shared.model.Book;
 import com.example.bookservice.context.book.model.BookCopy;
 import com.example.bookservice.context.book.repository.BookRepository;
 import com.example.bookservice.context.book.repository.CopiesRepository;
-import com.example.bookservice.context.library.model.Library;
+import com.example.shared.model.Library;
 import com.example.bookservice.context.library.repository.LibraryRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;

@@ -1,6 +1,6 @@
 package com.example.bookservice.context.author.repository;
 
-import com.example.bookservice.context.author.model.Author;
+import com.example.shared.model.Author;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

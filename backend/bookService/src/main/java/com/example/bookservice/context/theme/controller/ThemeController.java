@@ -1,7 +1,7 @@
 package com.example.bookservice.context.theme.controller;
 
 import com.example.bookservice.api.Endpoints;
-import com.example.bookservice.context.theme.model.Theme;
+import com.example.shared.model.Theme;
 import com.example.bookservice.context.theme.service.ThemeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

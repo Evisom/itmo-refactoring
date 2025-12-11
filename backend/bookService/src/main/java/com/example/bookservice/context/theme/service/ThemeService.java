@@ -1,6 +1,6 @@
 package com.example.bookservice.context.theme.service;
 
-import com.example.bookservice.context.theme.model.Theme;
+import com.example.shared.model.Theme;
 import com.example.bookservice.context.theme.repository.ThemeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

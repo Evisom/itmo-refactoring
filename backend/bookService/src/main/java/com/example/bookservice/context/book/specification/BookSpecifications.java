@@ -1,11 +1,11 @@
 package com.example.bookservice.context.book.specification;
 
-import com.example.bookservice.context.author.model.Author;
-import com.example.bookservice.context.book.model.Book;
+import com.example.shared.model.Author;
+import com.example.shared.model.Book;
 import com.example.bookservice.context.book.model.BookCopy;
-import com.example.bookservice.context.genre.model.Genre;
-import com.example.bookservice.context.publisher.model.Publisher;
-import com.example.bookservice.context.theme.model.Theme;
+import com.example.shared.model.Genre;
+import com.example.shared.model.Publisher;
+import com.example.shared.model.Theme;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -53,7 +53,11 @@ public class BookSpecifications {
             if (minCopies == null) {
                 return cb.conjunction();
             }
-            return cb.greaterThanOrEqualTo(cb.size(root.get("copies")), minCopies);
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<BookCopy> bookCopyRoot = subquery.from(BookCopy.class);
+            subquery.select(cb.count(bookCopyRoot))
+                    .where(cb.equal(bookCopyRoot.get("book"), root));
+            return cb.greaterThanOrEqualTo(subquery, (long) minCopies);
         };
     }
 
@@ -62,7 +66,11 @@ public class BookSpecifications {
             if (maxCopies == null) {
                 return cb.conjunction();
             }
-            return cb.lessThanOrEqualTo(cb.size(root.get("copies")), maxCopies);
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<BookCopy> bookCopyRoot = subquery.from(BookCopy.class);
+            subquery.select(cb.count(bookCopyRoot))
+                    .where(cb.equal(bookCopyRoot.get("book"), root));
+            return cb.lessThanOrEqualTo(subquery, (long) maxCopies);
         };
     }
 
@@ -121,22 +129,35 @@ public class BookSpecifications {
 
     public static Specification<Book> hasAvailableCopies() {
         return (root, query, cb) -> {
-
-            Join<Book, BookCopy> copiesJoin = root.join("copies");
-
-
-            return cb.isTrue(copiesJoin.get("available"));
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<BookCopy> bookCopyRoot = subquery.from(BookCopy.class);
+            subquery.select(cb.literal(1L))
+                    .where(cb.and(
+                            cb.equal(bookCopyRoot.get("book"), root),
+                            cb.isTrue(bookCopyRoot.get("available"))
+                    ));
+            return cb.exists(subquery);
         };
     }
 
     public static Specification<Book> hasNoAvailableCopies() {
         return (root, query, cb) -> {
-            Join<Book, BookCopy> copiesJoin = root.join("copies", JoinType.LEFT); // Используем LEFT JOIN
-
-
-            return cb.or(
-                    cb.isNull(copiesJoin.get("id")),  // Нет копий (id == null)
-                    cb.isFalse(copiesJoin.get("available"))  // Копия недоступна (available = false)
+            Subquery<Long> availableSubquery = query.subquery(Long.class);
+            Root<BookCopy> availableRoot = availableSubquery.from(BookCopy.class);
+            availableSubquery.select(cb.literal(1L))
+                    .where(cb.and(
+                            cb.equal(availableRoot.get("book"), root),
+                            cb.isTrue(availableRoot.get("available"))
+                    ));
+            
+            Subquery<Long> anySubquery = query.subquery(Long.class);
+            Root<BookCopy> anyRoot = anySubquery.from(BookCopy.class);
+            anySubquery.select(cb.literal(1L))
+                    .where(cb.equal(anyRoot.get("book"), root));
+            
+            return cb.and(
+                    cb.not(cb.exists(availableSubquery)),
+                    cb.exists(anySubquery)
             );
         };
     }

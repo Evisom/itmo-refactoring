@@ -1,7 +1,5 @@
-package com.example.operationservice.context.author.model;
+package com.example.shared.model;
 
-
-import com.example.operationservice.context.book.model.Book;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,3 +31,4 @@ public class Author {
     @ManyToMany(mappedBy = "authors")
     private List<Book> books;
 }
+

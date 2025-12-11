@@ -2,7 +2,7 @@ package com.example.bookservice.context.library.service;
 
 import com.example.bookservice.context.book.model.BookCopy;
 import com.example.bookservice.context.book.repository.CopiesRepository;
-import com.example.bookservice.context.library.model.Library;
+import com.example.shared.model.Library;
 import com.example.bookservice.context.library.model.LibraryResponse;
 import com.example.bookservice.context.library.repository.LibraryRepository;
 import lombok.RequiredArgsConstructor;

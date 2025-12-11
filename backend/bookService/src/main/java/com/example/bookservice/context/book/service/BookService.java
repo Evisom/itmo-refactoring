@@ -2,7 +2,7 @@ package com.example.bookservice.context.book.service;
 
 import com.example.bookservice.context.book.exception.BookAlreadyExistException;
 import com.example.bookservice.context.book.exception.BookNotFoundException;
-import com.example.bookservice.context.book.model.Book;
+import com.example.shared.model.Book;
 import com.example.bookservice.context.book.model.BookModel;
 import com.example.bookservice.context.book.model.BookSearchRequest;
 import com.example.bookservice.context.book.repository.BookRepository;

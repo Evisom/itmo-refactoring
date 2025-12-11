@@ -1,9 +1,5 @@
-package com.example.operationservice.context.book.model;
+package com.example.shared.model;
 
-import com.example.operationservice.context.author.model.Author;
-import com.example.operationservice.context.genre.model.Genre;
-import com.example.operationservice.context.publisher.model.Publisher;
-import com.example.operationservice.context.theme.model.Theme;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,6 +28,9 @@ public class Book {
     @Column(nullable = false)
     private String ISBN;
 
+    @Formula("(SELECT get_average_book_rating(id))")
+    private Float averageRating;
+
     @ManyToOne
     @JoinColumn(name = "genre_id")
     private Genre genre;
@@ -51,10 +50,5 @@ public class Book {
             inverseJoinColumns = @JoinColumn(name = "author_id")
     )
     private List<Author> authors;
-
-    @OneToMany(mappedBy = "book")
-    private List<BookCopy> copies;
-
-    @Formula("(SELECT get_average_book_rating(id))")
-    private Float averageRating;
 }
+

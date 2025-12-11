@@ -1,7 +1,7 @@
 package com.example.operationservice.context.rating.model;
 
 
-import com.example.operationservice.context.book.model.Book;
+import com.example.shared.model.Book;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

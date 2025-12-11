@@ -1,5 +1,6 @@
 package com.example.operationservice.context.author.model;
 
+import com.example.shared.model.Author;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

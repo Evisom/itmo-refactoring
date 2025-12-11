@@ -1,7 +1,7 @@
 package com.example.bookservice.context.genre.service;
 
 
-import com.example.bookservice.context.genre.model.Genre;
+import com.example.shared.model.Genre;
 import com.example.bookservice.context.genre.repository.GenreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.example.bookservice.context.library.model;
+package com.example.shared.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,3 +29,4 @@ public class Library {
     @Column(name = "closing_time")
     private LocalTime closingTime;
 }
+

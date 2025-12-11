@@ -1,7 +1,7 @@
 package com.example.bookservice.context.publisher.controller;
 
 import com.example.bookservice.api.Endpoints;
-import com.example.bookservice.context.publisher.model.Publisher;
+import com.example.shared.model.Publisher;
 import com.example.bookservice.context.publisher.service.PublisherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -1,10 +1,11 @@
 package com.example.operationservice.context.book.model;
 
-
 import com.example.operationservice.context.author.model.AuthorModel;
-import com.example.operationservice.context.genre.model.Genre;
-import com.example.operationservice.context.publisher.model.Publisher;
-import com.example.operationservice.context.theme.model.Theme;
+import com.example.operationservice.context.book.model.BookCopy;
+import com.example.shared.model.Book;
+import com.example.shared.model.Genre;
+import com.example.shared.model.Publisher;
+import com.example.shared.model.Theme;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

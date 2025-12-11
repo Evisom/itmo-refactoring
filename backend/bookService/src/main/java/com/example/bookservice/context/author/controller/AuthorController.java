@@ -1,7 +1,7 @@
 package com.example.bookservice.context.author.controller;
 
 import com.example.bookservice.api.Endpoints;
-import com.example.bookservice.context.author.model.Author;
+import com.example.shared.model.Author;
 import com.example.bookservice.context.author.model.AuthorModel;
 import com.example.bookservice.context.author.service.AuthorService;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package com.example.operationservice.context.author.repository;
 
-import com.example.operationservice.context.author.model.Author;
+import com.example.shared.model.Author;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

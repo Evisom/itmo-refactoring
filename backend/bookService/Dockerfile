@@ -2,24 +2,25 @@ FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
-# Копируем только файлы для сборки (для кеширования слоев)
-COPY gradlew .
-COPY gradle ./gradle
-COPY build.gradle .
-COPY settings.gradle .
+COPY bookService/gradlew ./bookService/
+COPY bookService/gradle ./bookService/gradle
+COPY bookService/build.gradle ./bookService/
+COPY bookService/settings.gradle ./bookService/
 
-# Даем права на выполнение gradlew
-RUN chmod +x gradlew
+COPY shared-library/build.gradle ./shared-library/
+COPY shared-library/settings.gradle ./shared-library/
+COPY shared-library/src ./shared-library/src
 
-# Копируем исходный код
-COPY . .
+COPY bookService/src ./bookService/src
 
-# Собираем проект с retry для работы с нестабильным соединением
+RUN chmod +x bookService/gradlew
+
+WORKDIR /app/bookService
+
 RUN ./gradlew build -x test --no-daemon || \
     (sleep 10 && ./gradlew build -x test --no-daemon) || \
     (sleep 20 && ./gradlew build -x test --no-daemon --refresh-dependencies)
 
-# Запускаем приложение
 ENTRYPOINT ["java", "-jar", "build/libs/bookService-0.0.1-SNAPSHOT.jar"]
 
 EXPOSE 8082

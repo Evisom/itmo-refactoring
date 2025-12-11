@@ -24,6 +24,7 @@ repositories {
 }
 
 dependencies {
+    implementation project(':shared-library')
     implementation group: 'org.hibernate.orm', name: 'hibernate-core', version: '7.0.0.Beta3'
     implementation group: 'org.jboss.logging', name: 'jboss-logging', version: '3.6.1.Final'
     implementation group: 'jakarta.persistence', name: 'jakarta.persistence-api', version: '3.2.0'

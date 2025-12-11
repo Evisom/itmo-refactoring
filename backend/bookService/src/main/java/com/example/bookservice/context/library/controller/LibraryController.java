@@ -2,7 +2,7 @@ package com.example.bookservice.context.library.controller;
 
 import com.example.bookservice.api.Endpoints;
 import com.example.bookservice.context.book.service.BookCopyCsvService;
-import com.example.bookservice.context.library.model.Library;
+import com.example.shared.model.Library;
 import com.example.bookservice.context.library.model.LibraryResponse;
 import com.example.bookservice.context.library.service.LibraryService;
 import lombok.RequiredArgsConstructor;

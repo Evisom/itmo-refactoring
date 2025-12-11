@@ -1,5 +1,4 @@
-package com.example.operationservice.context.genre.model;
-
+package com.example.shared.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
@@ -9,11 +8,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "genre")
+@Table(name = "theme")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Genre {
+public class Theme {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,3 +26,4 @@ public class Genre {
     @Min(1)
     private Short popularity;
 }
+

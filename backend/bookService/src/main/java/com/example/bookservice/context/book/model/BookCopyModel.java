@@ -1,5 +1,6 @@
 package com.example.bookservice.context.book.model;
 
+import com.example.bookservice.context.book.model.BookCopy;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

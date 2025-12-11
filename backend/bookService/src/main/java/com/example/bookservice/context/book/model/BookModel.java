@@ -1,9 +1,10 @@
 package com.example.bookservice.context.book.model;
 
 import com.example.bookservice.context.author.model.AuthorModel;
-import com.example.bookservice.context.genre.model.Genre;
-import com.example.bookservice.context.publisher.model.Publisher;
-import com.example.bookservice.context.theme.model.Theme;
+import com.example.shared.model.Book;
+import com.example.shared.model.Genre;
+import com.example.shared.model.Publisher;
+import com.example.shared.model.Theme;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -39,18 +40,10 @@ public class BookModel {
         if (book.getAuthors() != null) {
             model.setAuthors(
                     book.getAuthors().stream()
-                            .map(AuthorModel::toModel) // Преобразуем каждого автора в модель
+                            .map(AuthorModel::toModel)
                             .collect(Collectors.toList())
             );
         }
-        if (book.getCopies() != null) {
-            model.setCopies(
-                    book.getCopies().stream()
-                            .map(BookCopyModel::toModel)
-                            .collect(Collectors.toList())
-            );
-        }
-
 
         return model;
     }

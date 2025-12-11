@@ -1,7 +1,7 @@
 package com.example.bookservice.context.book.controller;
 
 import com.example.bookservice.api.Endpoints;
-import com.example.bookservice.context.book.model.Book;
+import com.example.shared.model.Book;
 import com.example.bookservice.context.book.model.BookModel;
 import com.example.bookservice.context.book.model.BookSearchRequest;
 import com.example.bookservice.context.book.service.BookService;
