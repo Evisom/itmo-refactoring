@@ -1,5 +1,6 @@
 package com.example.bookservice.service;
 
+import com.example.shared.exception.ResourceNotFoundException;
 import com.example.shared.model.Book;
 import com.example.bookservice.model.BookCopy;
 import com.example.bookservice.repository.BookRepository;
@@ -42,11 +43,11 @@ public class BookCopyCsvService {
 
                 Book book = bookRepository.findBookByISBN(isbn);
                 if (book == null) {
-                    throw new IllegalArgumentException("Book not found for ISBN: " + isbn);
+                    throw new ResourceNotFoundException("Book not found for ISBN: " + isbn);
                 }
 
                 Library library = libraryRepository.findById(libraryId)
-                        .orElseThrow(() -> new IllegalArgumentException("Library not found for ID: " + libraryId));
+                        .orElseThrow(() -> new ResourceNotFoundException("Library not found for ID: " + libraryId));
 
 
                 BookCopy bookCopy = new BookCopy();

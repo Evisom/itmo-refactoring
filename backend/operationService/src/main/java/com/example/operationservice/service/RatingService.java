@@ -1,5 +1,6 @@
 package com.example.operationservice.service;
 
+import com.example.shared.exception.ResourceNotFoundException;
 import com.example.operationservice.dto.RatingCreateRequest;
 import com.example.operationservice.dto.RatingResponse;
 import com.example.operationservice.dto.mapper.RatingMapper;
@@ -55,7 +56,8 @@ public class RatingService {
         newRating.setRatingValue(request.getRatingValue().shortValue());
         newRating.setReview(request.getReview());
         newRating.setUserId(userDetails != null ? userDetails.getId() : "anonymous");
-        newRating.setBook(bookRepository.findById(request.getBookId()).orElseThrow());
+        newRating.setBook(bookRepository.findById(request.getBookId())
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + request.getBookId())));
         newRating.setTime(LocalDateTime.now());
         return ratingMapper.toResponse(ratingRepository.save(newRating));
     }

@@ -116,19 +116,19 @@ public class BookService {
 
         if (request.getGenreId() != null) {
             Genre genre = genreRepository.findById(request.getGenreId())
-                    .orElseThrow(() -> new RuntimeException("Genre not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Genre not found with id: " + request.getGenreId()));
             book.setGenre(genre);
         }
 
         if (request.getThemeId() != null) {
             Theme theme = themeRepository.findById(request.getThemeId())
-                    .orElseThrow(() -> new RuntimeException("Theme not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Theme not found with id: " + request.getThemeId()));
             book.setTheme(theme);
         }
 
         if (request.getPublisherId() != null) {
             Publisher publisher = publisherRepository.findById(request.getPublisherId())
-                    .orElseThrow(() -> new RuntimeException("Publisher not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Publisher not found with id: " + request.getPublisherId()));
             book.setPublisher(publisher);
         }
 
@@ -136,7 +136,7 @@ public class BookService {
             List<Author> authors = new ArrayList<>();
             for (Long authorId : request.getAuthorIds()) {
                 Author author = authorRepository.findById(authorId)
-                        .orElseThrow(() -> new RuntimeException("Author not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Author not found with id: " + authorId));
                 authors.add(author);
             }
             book.setAuthors(authors);
@@ -152,19 +152,19 @@ public class BookService {
 
         if (request.getGenreId() != null) {
             Genre genre = genreRepository.findById(request.getGenreId())
-                    .orElseThrow(() -> new RuntimeException("Genre not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Genre not found with id: " + request.getGenreId()));
             book.setGenre(genre);
         }
 
         if (request.getThemeId() != null) {
             Theme theme = themeRepository.findById(request.getThemeId())
-                    .orElseThrow(() -> new RuntimeException("Theme not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Theme not found with id: " + request.getThemeId()));
             book.setTheme(theme);
         }
 
         if (request.getPublisherId() != null) {
             Publisher publisher = publisherRepository.findById(request.getPublisherId())
-                    .orElseThrow(() -> new RuntimeException("Publisher not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Publisher not found with id: " + request.getPublisherId()));
             book.setPublisher(publisher);
         }
 
@@ -172,7 +172,7 @@ public class BookService {
             List<Author> authors = new ArrayList<>();
             for (Long authorId : request.getAuthorIds()) {
                 Author author = authorRepository.findById(authorId)
-                        .orElseThrow(() -> new RuntimeException("Author not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Author not found with id: " + authorId));
                 authors.add(author);
             }
             book.setAuthors(authors);

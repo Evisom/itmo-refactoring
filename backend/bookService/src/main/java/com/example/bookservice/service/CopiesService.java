@@ -62,8 +62,10 @@ public class CopiesService {
         }
         BookCopy newBook = new BookCopy();
         newBook.setAvailable(request.getAvailable());
-        newBook.setBook(bookRepository.findById(request.getBookId()).orElseThrow());
-        newBook.setLibrary(libraryRepository.findById(request.getLibraryId()).orElseThrow());
+        newBook.setBook(bookRepository.findById(request.getBookId())
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + request.getBookId())));
+        newBook.setLibrary(libraryRepository.findById(request.getLibraryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Library not found with id: " + request.getLibraryId())));
         newBook.setInventoryNumber(request.getInventoryNumber());
         return bookCopyMapper.toResponse(copiesRepository.save(newBook));
     }
@@ -74,8 +76,10 @@ public class CopiesService {
                 .orElseThrow(() -> new ResourceNotFoundException("Book copy not found with id: " + id));
 
         oldBook.setAvailable(request.getAvailable());
-        oldBook.setBook(bookRepository.findById(request.getBookId()).orElseThrow());
-        oldBook.setLibrary(libraryRepository.findById(request.getLibraryId()).orElseThrow());
+        oldBook.setBook(bookRepository.findById(request.getBookId())
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + request.getBookId())));
+        oldBook.setLibrary(libraryRepository.findById(request.getLibraryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Library not found with id: " + request.getLibraryId())));
         oldBook.setInventoryNumber(request.getInventoryNumber());
         return bookCopyMapper.toResponse(copiesRepository.save(oldBook));
     }

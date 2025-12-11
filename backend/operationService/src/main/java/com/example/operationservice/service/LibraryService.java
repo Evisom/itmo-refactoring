@@ -1,5 +1,6 @@
 package com.example.operationservice.service;
 
+import com.example.shared.exception.ResourceNotFoundException;
 import com.example.operationservice.model.BookCopy;
 import com.example.operationservice.model.BookModelForReport;
 import com.example.operationservice.repository.CopiesRepository;
@@ -76,7 +77,7 @@ public class LibraryService {
                     .filter(bookCopy -> bookCopy.getBook().getId().equals(bookId))
                     .findFirst()
                     .map(BookModelForReport::toModel)
-                    .orElseThrow(() -> new RuntimeException("Book not found"));  // Преобразовать в BookModel
+                    .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + bookId));
 
             response.setBookModels(bookModel);
 
