@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import useSWR from "swr";
 import {
   Typography,
   Card,
@@ -9,33 +8,26 @@ import {
   Grid,
   Box,
   Button,
-  Rating,
   Alert,
   Snackbar,
   Chip,
 } from "@mui/material";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import fetcher from "@/shared/services/api-client";
-import { config } from "@/shared/utils/config";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import { useSearchParams } from "next/navigation";
+import { useTransactions } from "@/features/transactions/hooks/useTransactions";
+import { useCancelTransaction } from "@/features/transactions/hooks/useCancelTransaction";
 
 const UserHistoryPage = () => {
   const searchParams = useSearchParams();
-
   const userEmail = searchParams.get("email");
-  const { email, token } = useAuth();
-  const { data: historyData, mutate } = useSWR(
-    email
-      ? [
-          `${config.OPERATION_API_URL}/operations/history?email=${
-            token ? (userEmail ? userEmail : email) : null
-          }`,
-          token,
-        ]
-      : null,
-    ([url, token]) => fetcher(url, token)
+  const { email } = useAuth();
+  const targetEmail = userEmail || email || undefined;
+  
+  const { transactions: historyData, isLoading, mutate } = useTransactions(
+    targetEmail ? { userId: targetEmail, page: 0, size: 100 } : undefined
   );
+  const { cancelTransaction, isLoading: cancelling } = useCancelTransaction();
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -47,38 +39,29 @@ const UserHistoryPage = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const handleCancel = async (id) => {
+  const handleCancel = async (id: number) => {
     try {
-      const response = await fetch(
-        `${config.OPERATION_API_URL}/operations/transaction/cancel/${id}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        setSnackbar({
-          open: true,
-          message: "Бронирование успешно отменено",
-          severity: "success",
-        });
-        mutate();
-      } else {
-        throw new Error("Ошибка при отмене бронирования");
-      }
+      await cancelTransaction(id);
+      setSnackbar({
+        open: true,
+        message: "Бронирование успешно отменено",
+        severity: "success",
+      });
+      mutate();
     } catch (err) {
-      setSnackbar({ open: true, message: err.message, severity: "error" });
+      setSnackbar({
+        open: true,
+        message: (err as Error).message || "Ошибка при отмене бронирования",
+        severity: "error",
+      });
     }
   };
 
-  if (!historyData) {
+  if (isLoading) {
     return <LoadingSpinner fullScreen />;
   }
 
-  const getChipColor = (status) => {
+  const getChipColor = (status: string) => {
     switch (status) {
       case "REJECTED": {
         return "error";
@@ -94,74 +77,60 @@ const UserHistoryPage = () => {
 
   return (
     <Box sx={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
-      <Typography variant="h4">История пользователя {userEmail}</Typography>
-      {!historyData?.length && (
+      <Typography variant="h4">История пользователя {targetEmail}</Typography>
+      {!historyData || historyData.length === 0 ? (
         <Typography>
           Пользователя с такой почтой нет или он не сделал ни одного действия
         </Typography>
-      )}
-      <Grid container spacing={2} sx={{ marginTop: "24px" }}>
-        {historyData.map((item) => (
-          <Grid item xs={12} key={item.id}>
-            <Card>
-              <CardContent>
-                <Typography variant="subtitle1" color="textSecondary">
-                  {new Date(item.time).toLocaleString()}
-                </Typography>
-                {item.type === "Rating" && (
-                  <>
-                    <Typography variant="h6">Отзыв</Typography>
-                    <Rating value={item.ratingValue} readOnly />
-                    <Typography>{item.review || "Без текста"}</Typography>
-                    <Typography>
-                      Книга: {item.title} —{" "}
-                      {item.author
-                        .map((a) => `${a.name} ${a.surname}`)
-                        .join(", ")}
-                    </Typography>
-                  </>
-                )}
-                {item.type === "BookTransaction" && (
-                  <>
-                    <Typography variant="h6">Бронирование книги</Typography>
-                    <Typography>
-                      Книга: {item.title} —{" "}
-                      {item.author
-                        .map((a) => `${a.name} ${a.surname}`)
-                        .join(", ")}
-                    </Typography>
-                    <Typography>
-                      Библиотека: {item.library?.name || "Не указана"}
-                    </Typography>
-                    <Typography>Инвентарный номер: {item.invNumber}</Typography>
+      ) : (
+        <Grid container spacing={2} sx={{ marginTop: "24px" }}>
+          {historyData.map((item) => (
+            <Grid item xs={12} key={item.id}>
+              <Card>
+                <CardContent>
+                  <Typography variant="subtitle1" color="textSecondary">
+                    {new Date(item.createdAt).toLocaleString()}
+                  </Typography>
+                  <Typography variant="h6">Бронирование книги</Typography>
+                  <Typography>
+                    Книга: {item.bookCopy?.book?.title || "Неизвестно"} —{" "}
+                    {item.bookCopy?.book?.authors
+                      ? item.bookCopy.book.authors
+                          .map((a: { name: string; surname: string }) => `${a.name} ${a.surname}`)
+                          .join(", ")
+                      : "Не указан"}
+                  </Typography>
+                  <Typography>
+                    Библиотека: {item.bookCopy?.library?.name || "Не указана"}
+                  </Typography>
+                  <Typography>
+                    Инвентарный номер: {item.bookCopy?.inventoryNumber || "Не указан"}
+                  </Typography>
 
-                    <Chip
-                      sx={{ margin: "12px 0" }}
-                      label={item.status}
-                      color={getChipColor(item.status)}
-                      variant="outlined"
-                    />
-                    {item.comment && (
-                      <Typography>Комментарий: {item.comment}</Typography>
-                    )}
-                    {item.status === "PENDING" && (
-                      <Button
-                        sx={{ marginTop: "16px" }}
-                        variant="contained"
-                        fullWidth
-                        color="error"
-                        onClick={() => handleCancel(item.id)}
-                      >
-                        Отменить
-                      </Button>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                  <Chip
+                    sx={{ margin: "12px 0" }}
+                    label={item.status}
+                    color={getChipColor(item.status)}
+                    variant="outlined"
+                  />
+                  {item.status === "PENDING" && (
+                    <Button
+                      sx={{ marginTop: "16px" }}
+                      variant="contained"
+                      fullWidth
+                      color="error"
+                      onClick={() => handleCancel(item.id)}
+                      disabled={cancelling}
+                    >
+                      Отменить
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

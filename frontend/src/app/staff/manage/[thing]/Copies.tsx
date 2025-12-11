@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import useSWR from "swr";
 import {
   Button,
   Box,
@@ -17,13 +16,16 @@ import {
   MenuItem,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import fetcher from "@/shared/services/api-client";
-import { config } from "@/shared/utils/config";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useLibraries } from "@/features/books/hooks/useLibraries";
+import { useBooks } from "@/features/books/hooks/useBooks";
+import { useAllBookCopies } from "@/features/books/hooks/useAllBookCopies";
+import { useCreateBookCopy } from "@/features/books/hooks/useCreateBookCopy";
+import { useUpdateBookCopy } from "@/features/books/hooks/useUpdateBookCopy";
+import { useDeleteBookCopy } from "@/features/books/hooks/useDeleteBookCopy";
 import { useErrorAlert } from "@/shared/utils/useErrorAlert";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 
 const Copies = () => {
-  const { token } = useAuth();
   const { error, showError } = useErrorAlert();
 
   const [paginationModel, setPaginationModel] = useState({
@@ -32,7 +34,7 @@ const Copies = () => {
   });
 
   const [formState, setFormState] = useState({
-    id: null,
+    id: null as number | null,
     bookId: "",
     libraryId: "",
     inventoryNumber: "",
@@ -41,79 +43,50 @@ const Copies = () => {
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [bookSearchQuery, setBookSearchQuery] = useState("");
 
-  // Fetch libraries for the dropdown
-  const { data: libraries } = useSWR(
-    token ? [`${config.API_URL}/library/allLibraries`, token] : null,
-    ([url, token]) => fetcher(url, token)
+  const { libraries } = useLibraries();
+  const { books: bookSearchResults } = useBooks(
+    bookSearchQuery ? { name: bookSearchQuery, size: 10 } : undefined
   );
+  const { copies, isLoading: copiesLoading, mutate } = useAllBookCopies({
+    page: paginationModel.page,
+    size: paginationModel.pageSize,
+  });
+  const { createBookCopy, isLoading: creating } = useCreateBookCopy();
+  const { updateBookCopy, isLoading: updating } = useUpdateBookCopy();
+  const { deleteBookCopy, isLoading: deleting } = useDeleteBookCopy();
 
-  // Fetch copies data
-  const { data, mutate } = useSWR(
-    token
-      ? [
-          `${config.API_URL}/library/copies?page=${paginationModel.page}&size=${paginationModel.pageSize}`,
-          token,
-        ]
-      : null,
-    ([url, token]) => fetcher(url, token),
-    { revalidateOnFocus: false }
-  );
+  const bookOptions = bookSearchResults?.map((book) => ({
+    id: book.id,
+    label: book.title,
+  })) || [];
 
-  // Fetch books based on input
-  const [bookOptions, setBookOptions] = useState([]);
-  const handleBookSearch = async (query) => {
-    const params = new URLSearchParams();
-    params.append("name", query);
-    if (query.length > 0) {
-      const response = await fetch(
-        `${config.API_URL}/library/find?${params.toString()}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (response.ok) {
-        const books = await response.json();
-        setBookOptions(
-          books.content.map((book) => ({ id: book.id, label: book.title }))
-        );
-      }
-    }
+  const handleBookSearch = (query: string) => {
+    setBookSearchQuery(query);
   };
 
-  // Fetch book title for editing
-  const fetchBookTitle = async (bookId) => {
-    try {
-      const response = await fetch(
-        `${config.API_URL}/library/books/${bookId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (response.ok) {
-        const book = await response.json();
-
-        return book.title;
-      }
-    } catch {
-      return "Неизвестная книга";
-    }
+  const fetchBookTitle = async (bookId: number) => {
+    const book = bookSearchResults?.find((b) => b.id === bookId);
+    return book?.title || "Неизвестная книга";
   };
 
-  const handleInputChange = (field) => (event, value) => {
+  const handleInputChange = (field: string) => (event: unknown, value?: unknown) => {
     setFormState((prevState) => ({
       ...prevState,
-      [field]: field === "available" ? event.target.checked : value,
+      [field]: field === "available" && event && typeof event === "object" && "target" in event
+        ? (event.target as { checked: boolean }).checked
+        : value,
     }));
   };
 
-  const handleEdit = async (row) => {
+  const handleEdit = async (row: { id: number; bookId: number; libraryId: number; inventoryNumber: string; available: boolean }) => {
     const bookTitle = await fetchBookTitle(row.bookId);
     setBookOptions((prev) => [...prev, { id: row.bookId, label: bookTitle }]);
     setFormState({
       id: row.id,
-      bookId: row.bookId,
-      libraryId: row.libraryId,
+      bookId: row.bookId.toString(),
+      libraryId: row.libraryId.toString(),
       inventoryNumber: row.inventoryNumber,
       available: row.available,
       bookTitle,
@@ -135,12 +108,6 @@ const Copies = () => {
 
   const handleSubmit = async () => {
     try {
-      const url =
-        formState.id === null
-          ? `${config.API_URL}/library/copies`
-          : `${config.API_URL}/library/copies/${formState.id}`;
-      const method = formState.id === null ? "POST" : "PUT";
-
       const payload = {
         bookId: parseInt(formState.bookId, 10),
         libraryId: parseInt(formState.libraryId, 10),
@@ -148,42 +115,25 @@ const Copies = () => {
         available: formState.available,
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error("Ошибка при сохранении экземпляра");
+      if (formState.id === null) {
+        await createBookCopy(payload);
+      } else {
+        await updateBookCopy(formState.id, payload);
       }
 
       mutate();
       handleCloseModal();
     } catch (err) {
-      showError(err.message);
+      showError((err as Error).message || "Ошибка при сохранении экземпляра");
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`${config.API_URL}/library/copies/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Ошибка при удалении экземпляра");
-      }
-
+      await deleteBookCopy(id);
       mutate();
     } catch (err) {
-      showError(err.message);
+      showError((err as Error).message || "Ошибка при удалении экземпляра");
     }
   };
 
@@ -196,7 +146,7 @@ const Copies = () => {
       field: "available",
       headerName: "Доступен",
       flex: 2,
-      renderCell: (params) => (params.row.available ? "Да" : "Нет"),
+      renderCell: (params: GridRenderCellParams) => (params.row.available ? "Да" : "Нет"),
     },
     {
       field: "actions",
@@ -218,6 +168,7 @@ const Copies = () => {
             color="error"
             size="small"
             onClick={() => handleDelete(params.row.id)}
+            disabled={deleting}
           >
             Удалить
           </Button>
@@ -241,26 +192,28 @@ const Copies = () => {
       >
         Добавить экземпляр
       </Button>
-      <DataGrid
-        rows={data?.content || []}
-        columns={columns}
-        autoHeight
-        pagination
-        paginationMode="server"
-        rowCount={data?.totalElements}
-        key={"24324"}
-        paginationModel={paginationModel}
-        onPaginationModelChange={(model) => {
-          // Сохраняем текущую страницу и размер в состоянии
-          setPaginationModel((prev) => ({
-            ...prev,
-            page: model.page !== undefined ? model.page : prev.page,
-            pageSize:
-              model.pageSize !== undefined ? model.pageSize : prev.pageSize,
-          }));
-        }}
-        loading={!data && !error}
-      />
+      {copiesLoading ? (
+        <LoadingSpinner />
+      ) : (
+        <DataGrid
+          rows={copies || []}
+          columns={columns}
+          autoHeight
+          pagination
+          paginationMode="server"
+          rowCount={copies?.length || 0}
+          paginationModel={paginationModel}
+          onPaginationModelChange={(model) => {
+            setPaginationModel((prev) => ({
+              ...prev,
+              page: model.page !== undefined ? model.page : prev.page,
+              pageSize:
+                model.pageSize !== undefined ? model.pageSize : prev.pageSize,
+            }));
+          }}
+          loading={copiesLoading}
+        />
+      )}
 
       <Dialog open={isModalOpen} onClose={handleCloseModal} fullWidth>
         <DialogTitle>
@@ -273,13 +226,12 @@ const Copies = () => {
           <Autocomplete
             options={bookOptions}
             value={
-              bookOptions.find((option) => option.id === formState.bookId) ||
+              bookOptions.find((option) => option.id.toString() === formState.bookId) ||
               null
             }
-            onInputChange={(event, value) => {
+            onInputChange={(_event, value) => {
               handleBookSearch(value);
               if (value === "") {
-                // Сброс значения, если поле очистили
                 setFormState((prev) => ({
                   ...prev,
                   bookId: "",
@@ -287,14 +239,14 @@ const Copies = () => {
                 }));
               }
             }}
-            onChange={(event, value) => {
+            onChange={(_event, value) => {
               setFormState((prev) => ({
                 ...prev,
-                bookId: value?.id || "",
-                bookTitle: value?.label || "",
+                bookId: value ? value.id.toString() : "",
+                bookTitle: value ? value.label : "",
               }));
             }}
-            getOptionLabel={(option) => option.label || ""}
+            getOptionLabel={(option: { id: number; label: string }) => option.label || ""}
             isOptionEqualToValue={(option, value) => option.id === value?.id}
             renderInput={(params) => (
               <TextField
@@ -313,16 +265,23 @@ const Copies = () => {
             label="Библиотека"
             value={formState.libraryId}
             onChange={(e) =>
-              handleInputChange("libraryId")(null, e.target.value)
+              setFormState((prev) => ({
+                ...prev,
+                libraryId: e.target.value,
+              }))
             }
             fullWidth
             margin="normal"
           >
-            {libraries?.map((library) => (
-              <MenuItem key={library.id} value={library.id}>
+            {libraries && libraries.length > 0 ? libraries.map((library) => (
+              <MenuItem key={library.id} value={library.id.toString()}>
                 {library.name}
               </MenuItem>
-            ))}
+            )) : (
+              <MenuItem value="" disabled>
+                Нет библиотек
+              </MenuItem>
+            )}
           </TextField>
           <TextField
             label="Инвентарный номер"
@@ -347,7 +306,7 @@ const Copies = () => {
           <Button onClick={handleCloseModal} color="secondary">
             Отмена
           </Button>
-          <Button onClick={handleSubmit} variant="contained" color="primary">
+          <Button onClick={handleSubmit} variant="contained" color="primary" disabled={creating || updating}>
             Сохранить
           </Button>
         </DialogActions>

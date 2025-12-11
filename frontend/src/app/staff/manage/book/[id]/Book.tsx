@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import useSWR from "swr";
 import {
   Autocomplete,
   Typography,
@@ -8,42 +7,30 @@ import {
   Box,
   Alert,
 } from "@mui/material";
-import fetcher from "@/shared/services/api-client";
-import { config } from "@/shared/utils/config";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useErrorAlert } from "@/shared/utils/useErrorAlert";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { usePublishers } from "@/features/books/hooks/usePublishers";
+import { useThemes } from "@/features/books/hooks/useThemes";
+import { useAuthors } from "@/features/books/hooks/useAuthors";
+import { useGenres } from "@/features/books/hooks/useGenres";
+import { useBook } from "@/features/books/hooks/useBook";
+import { useCreateBook } from "@/features/books/hooks/useCreateBook";
+import { useUpdateBook } from "@/features/books/hooks/useUpdateBook";
+import { useDeleteBook } from "@/features/books/hooks/useDeleteBook";
 
-const Book = ({ type, id = -1 }) => {
+const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
   const router = useRouter();
-
-  const { token } = useAuth();
   const { error, showError } = useErrorAlert();
 
-  const { data: publishersData } = useSWR(
-    token ? [`${config.API_URL}/library/publishers`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
-  const { data: themesData } = useSWR(
-    token ? [`${config.API_URL}/library/themes`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
-  const { data: authorsData } = useSWR(
-    token ? [`${config.API_URL}/library/authors`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
-  const { data: genresData } = useSWR(
-    token ? [`${config.API_URL}/library/genres`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
-
-  const { data: bookData } = useSWR(
-    type === "edit" && token
-      ? [`${config.API_URL}/library/books/${id}`, token]
-      : null,
-    ([url, token]) => fetcher(url, token)
-  );
+  const { publishers: publishersData, isLoading: publishersLoading } = usePublishers();
+  const { themes: themesData, isLoading: themesLoading } = useThemes();
+  const { authors: authorsData, isLoading: authorsLoading } = useAuthors();
+  const { genres: genresData, isLoading: genresLoading } = useGenres();
+  const { book: bookData, isLoading: bookLoading } = useBook(type === "edit" ? id : null);
+  const { createBook, isLoading: creating } = useCreateBook();
+  const { updateBook, isLoading: updating } = useUpdateBook();
+  const { deleteBook, isLoading: deleting } = useDeleteBook();
 
   const [bookState, setBookState] = useState({
     title: "",
@@ -71,14 +58,14 @@ const Book = ({ type, id = -1 }) => {
     }
   }, [type, bookData, publishersData, themesData, authorsData, genresData]);
 
-  const handleAutocompleteChange = (field) => (event, newValue) => {
+  const handleAutocompleteChange = (field: string) => (_event: unknown, newValue: unknown) => {
     setBookState((prevState) => ({
       ...prevState,
       [field]: newValue,
     }));
   };
 
-  const handleInputChange = (event) => {
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setBookState((prevState) => ({
       ...prevState,
@@ -86,65 +73,39 @@ const Book = ({ type, id = -1 }) => {
     }));
   };
 
-  const handleSubmit = () => {
-    const url =
-      type === "new"
-        ? `${config.API_URL}/library/newBook`
-        : `${config.API_URL}/library/books/${id}`;
-    const method = type === "new" ? "POST" : "PUT";
+  const handleSubmit = async () => {
+    try {
+      const payload = {
+        title: bookState.title,
+        isbn: bookState.isbn,
+        yearPublished: bookState.yearPublished ? parseInt(bookState.yearPublished, 10) : undefined,
+        genreId: bookState.genre?.id || 0,
+        themeId: bookState.theme?.id,
+        publisherId: bookState.publisher?.id,
+        authorIds: bookState.authors ? [bookState.authors.id] : [],
+      };
 
-    const payload = {
-      title: bookState.title,
-      publisher: bookState.publisher || null,
-      theme: bookState.theme || null,
-      authors: [bookState.authors],
-      genre: bookState.genre || null,
-      yearPublished: bookState.yearPublished,
-      isbn: bookState.isbn,
-    };
-
-    fetch(url, {
-      method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Не получается сохранить книгу");
-        router.back();
-      })
-      .catch((err) => {
-        showError(err.message);
-      });
+      if (type === "new") {
+        await createBook(payload);
+      } else {
+        await updateBook(id, payload);
+      }
+      router.back();
+    } catch (err) {
+      showError((err as Error).message || "Не получается сохранить книгу");
+    }
   };
 
-  const handleDelete = () => {
-    fetch(`${config.API_URL}/library/books/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Не получается удалить книгу");
-        router.back();
-      })
-      .catch((err) => {
-        showError(err.message);
-      });
+  const handleDelete = async () => {
+    try {
+      await deleteBook(id);
+      router.back();
+    } catch (err) {
+      showError((err as Error).message || "Не получается удалить книгу");
+    }
   };
 
-  if (
-    !(
-      publishersData &&
-      themesData &&
-      authorsData &&
-      genresData &&
-      (bookData || type === "new")
-    )
-  ) {
+  if (publishersLoading || themesLoading || authorsLoading || genresLoading || (type === "edit" && bookLoading)) {
     return <LoadingSpinner fullScreen />;
   }
   return (
@@ -158,6 +119,7 @@ const Book = ({ type, id = -1 }) => {
             variant="outlined"
             color="error"
             onClick={handleDelete}
+            disabled={deleting}
             sx={{ height: "fit-content" }}
           >
             Удалить
@@ -234,6 +196,7 @@ const Book = ({ type, id = -1 }) => {
         variant="contained"
         color="primary"
         onClick={handleSubmit}
+        disabled={creating || updating}
         sx={{ mt: 3 }}
       >
         {type === "new" ? "Создать книгу" : "Сохранить изменения"}

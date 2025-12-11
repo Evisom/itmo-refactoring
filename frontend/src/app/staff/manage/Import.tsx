@@ -46,7 +46,7 @@ const CsvImportPage = () => {
     formData.append("file", file);
 
     try {
-      const response = await fetch(`${config.API_URL}/library/upload`, {
+      const response = await fetch(`${config.API_V2_URL}/libraries/import`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

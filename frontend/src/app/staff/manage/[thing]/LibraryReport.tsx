@@ -16,9 +16,9 @@ import {
   Box,
 } from "@mui/material";
 import { config } from "@/shared/utils/config";
-
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import type { LibraryReportResponse } from "@/shared/types/api";
 
 const LibraryReportPage = () => {
   const searchParams = useSearchParams();
@@ -41,7 +41,7 @@ const LibraryReportPage = () => {
       try {
         setLoading(true);
         const response = await fetch(
-          `${config.OPERATION_API_URL}/operations/libraryReport/${libraryId}?date=${date}`,
+          `${config.OPERATION_API_V2_URL}/transactions/library-report/${libraryId}?date=${date}`,
           {
             headers: {
               authorization: "Bearer " + token,
@@ -51,7 +51,7 @@ const LibraryReportPage = () => {
         if (!response.ok) {
           throw new Error("Ошибка загрузки отчета о библиотеке");
         }
-        const data = await response.json();
+        const data: LibraryReportResponse[] = await response.json();
         setReportData(data);
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : "Произошла ошибка";

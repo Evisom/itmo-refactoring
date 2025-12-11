@@ -41,7 +41,7 @@ const ApprovalsPage = () => {
     severity: "success" as "success" | "error",
   });
 
-  const { libraries: librariesData, isLoading: librariesLoading, error: librariesError } = useLibraries();
+  const { libraries: librariesData, error: librariesError } = useLibraries();
   const { transactions: operationsData, isLoading: transactionsLoading, error: operationsError, mutate } = useTransactions(
     selectedLibrary ? { libraryId: selectedLibrary, status: "PENDING" } : undefined
   );

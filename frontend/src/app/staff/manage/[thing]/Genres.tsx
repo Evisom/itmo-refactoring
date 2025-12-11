@@ -16,7 +16,7 @@ export const Genres = () => {
   const { error, showError } = useErrorAlert();
   const { genres, isLoading } = useGenres();
   const { createGenre, isLoading: creating } = useCreateGenre();
-  const { deleteGenre, isLoading: deleting } = useDeleteGenre();
+  const { deleteGenre } = useDeleteGenre();
   const [formState, setFormState] = useState({
     name: "",
     popularity: "",

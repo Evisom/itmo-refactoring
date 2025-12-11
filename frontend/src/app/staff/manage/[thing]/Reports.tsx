@@ -1,6 +1,4 @@
-import { useAuth } from "@/features/auth/hooks/useAuth";
-import { config } from "@/shared/utils/config";
-import fetcher from "@/shared/services/api-client";
+import { useLibraries } from "@/features/books/hooks/useLibraries";
 import {
   Button,
   MenuItem,
@@ -14,19 +12,14 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { enUS } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import useSWR from "swr";
 
 const Reports = () => {
   const [email, setEmail] = useState("");
   const router = useRouter();
-  const { token } = useAuth();
   const isValidEmail = () =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email === "";
   const [selectedLibrary, setSelectedLibrary] = useState<number | null>(null);
-  const { data: librariesData } = useSWR(
-    token ? [`${config.API_URL}/library/allLibraries`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
+  const { libraries: librariesData } = useLibraries();
 
   const [date, setDate] = useState("");
 

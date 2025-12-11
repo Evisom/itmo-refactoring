@@ -8,7 +8,7 @@ import type {
 } from "@/shared/types/api";
 
 const bookCopiesApi = {
-  getBookCopies: async (
+  getAllBookCopies: async (
     token: string | null,
     params?: { page?: number; size?: number }
   ): Promise<BookCopyListResponse> => {
@@ -19,6 +19,21 @@ const bookCopiesApi = {
 
     const queryString = searchParams.toString();
     const url = `${config.API_V2_URL}/book-copies${queryString ? `?${queryString}` : ""}`;
+    return fetcher(url, token);
+  },
+
+  getBookCopies: async (
+    token: string | null,
+    bookId: number,
+    params?: { page?: number; size?: number }
+  ): Promise<BookCopyListResponse> => {
+    if (!token) throw new Error("No token provided");
+    const searchParams = new URLSearchParams();
+    if (params?.page !== undefined) searchParams.append("page", params.page.toString());
+    if (params?.size !== undefined) searchParams.append("size", params.size.toString());
+
+    const queryString = searchParams.toString();
+    const url = `${config.API_V2_URL}/books/${bookId}/copies${queryString ? `?${queryString}` : ""}`;
     return fetcher(url, token);
   },
 
