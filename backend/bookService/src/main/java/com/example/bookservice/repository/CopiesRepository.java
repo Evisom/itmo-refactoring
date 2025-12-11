@@ -7,16 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CopiesRepository extends JpaRepository<BookCopy, Long> {
 
+  Page<BookCopy> findByBookIdAndLibraryId(Long bookId, Long libraryId, Pageable pageable);
 
+  Page<BookCopy> findByLibraryId(Long libraryId, Pageable pageable);
 
-    Page<BookCopy> findByBookIdAndLibraryId(Long bookId, Long libraryId, Pageable pageable);
+  Page<BookCopy> findByBookId(Long bookId, Pageable pageable);
 
-
-    Page<BookCopy> findByLibraryId(Long libraryId, Pageable pageable);
-
-
-    Page<BookCopy> findByBookId(Long bookId, Pageable pageable);
-
-    BookCopy findByInventoryNumber(String inventoryNumber);
-
+  BookCopy findByInventoryNumber(String inventoryNumber);
 }

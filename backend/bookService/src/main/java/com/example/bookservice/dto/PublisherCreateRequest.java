@@ -8,12 +8,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PublisherCreateRequest {
-    @NotBlank(message = "Name is required")
-    private String name;
+  @NotBlank(message = "Name is required")
+  private String name;
 
-    private String website;
+  private String website;
 
-    @Email(message = "Email must be valid")
-    private String email;
+  @Email(message = "Email must be valid")
+  private String email;
 }
-

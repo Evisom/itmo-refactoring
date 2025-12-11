@@ -8,5 +8,5 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class Reason {
-    private String comment;
+  private String comment;
 }

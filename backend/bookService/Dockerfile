@@ -12,6 +12,7 @@ COPY shared-library/settings.gradle ./shared-library/
 COPY shared-library/src ./shared-library/src
 
 COPY bookService/src ./bookService/src
+COPY bookService/config ./bookService/config
 
 RUN chmod +x bookService/gradlew
 

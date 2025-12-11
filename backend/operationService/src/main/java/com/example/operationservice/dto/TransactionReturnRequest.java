@@ -7,7 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TransactionReturnRequest {
-    @NotBlank(message = "Inventory number is required")
-    private String inventoryNumber;
+  @NotBlank(message = "Inventory number is required")
+  private String inventoryNumber;
 }
-

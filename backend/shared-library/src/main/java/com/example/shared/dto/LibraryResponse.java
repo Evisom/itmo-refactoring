@@ -1,17 +1,15 @@
 package com.example.shared.dto;
 
+import java.time.LocalTime;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.time.LocalTime;
 
 @Getter
 @Setter
 public class LibraryResponse {
-    private Long id;
-    private String name;
-    private String address;
-    private LocalTime openingTime;
-    private LocalTime closingTime;
+  private Long id;
+  private String name;
+  private String address;
+  private LocalTime openingTime;
+  private LocalTime closingTime;
 }
-

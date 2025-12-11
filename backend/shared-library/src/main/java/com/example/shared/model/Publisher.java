@@ -12,17 +12,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Publisher {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String name;
+  @Column(nullable = false, unique = true)
+  private String name;
 
-    @Column(columnDefinition = "TEXT")
-    private String website;
+  @Column(columnDefinition = "TEXT")
+  private String website;
 
-    @Column(unique = true)
-    private String email;
+  @Column(unique = true)
+  private String email;
 }
-

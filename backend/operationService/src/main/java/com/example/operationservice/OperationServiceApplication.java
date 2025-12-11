@@ -10,8 +10,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableJpaRepositories(basePackages = {"com.example.operationservice"})
 public class OperationServiceApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(OperationServiceApplication.class, args);
-    }
-
+  public static void main(String[] args) {
+    SpringApplication.run(OperationServiceApplication.class, args);
+  }
 }

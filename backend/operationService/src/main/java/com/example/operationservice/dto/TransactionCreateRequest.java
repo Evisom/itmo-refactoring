@@ -7,7 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TransactionCreateRequest {
-    @NotNull(message = "Library ID is required")
-    private Long libraryId;
+  @NotNull(message = "Library ID is required")
+  private Long libraryId;
 }
-

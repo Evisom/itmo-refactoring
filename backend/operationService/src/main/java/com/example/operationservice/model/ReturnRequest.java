@@ -8,6 +8,5 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class ReturnRequest {
-    private  String  invNumber;
-
+  private String invNumber;
 }

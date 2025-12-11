@@ -8,16 +8,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class BookCopyCreateRequest {
-    @NotNull(message = "Book ID is required")
-    private Long bookId;
+  @NotNull(message = "Book ID is required")
+  private Long bookId;
 
-    @NotNull(message = "Library ID is required")
-    private Long libraryId;
+  @NotNull(message = "Library ID is required")
+  private Long libraryId;
 
-    @NotBlank(message = "Inventory number is required")
-    private String inventoryNumber;
+  @NotBlank(message = "Inventory number is required")
+  private String inventoryNumber;
 
-    @NotNull(message = "Available status is required")
-    private Boolean available;
+  @NotNull(message = "Available status is required")
+  private Boolean available;
 }
-

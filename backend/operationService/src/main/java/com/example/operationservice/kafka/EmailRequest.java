@@ -9,13 +9,12 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class EmailRequest {
-    @JsonProperty("email")
-    private String email;
+  @JsonProperty("email")
+  private String email;
 
-    @JsonProperty("subject")
-    private String subject;
+  @JsonProperty("subject")
+  private String subject;
 
-    @JsonProperty("body")
-    private String body;
-
+  @JsonProperty("body")
+  private String body;
 }

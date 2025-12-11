@@ -7,7 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TransactionDeclineRequest {
-    @NotBlank(message = "Comment is required")
-    private String comment;
+  @NotBlank(message = "Comment is required")
+  private String comment;
 }
-

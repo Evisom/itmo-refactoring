@@ -1,8 +1,8 @@
 package com.example.operationservice.model;
 
 public enum Status {
-    PENDING,
-    REJECTED,
-    APPROVED,
-    RETURNED
+  PENDING,
+  REJECTED,
+  APPROVED,
+  RETURNED
 }

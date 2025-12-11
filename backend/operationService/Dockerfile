@@ -12,6 +12,7 @@ COPY shared-library/settings.gradle ./shared-library/
 COPY shared-library/src ./shared-library/src
 
 COPY operationService/src ./operationService/src
+COPY operationService/config ./operationService/config
 
 RUN chmod +x operationService/gradlew
 

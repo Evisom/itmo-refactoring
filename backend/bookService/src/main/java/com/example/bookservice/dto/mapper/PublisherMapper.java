@@ -7,13 +7,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class PublisherMapper {
 
-    public PublisherResponse toResponse(Publisher publisher) {
-        PublisherResponse response = new PublisherResponse();
-        response.setId(publisher.getId());
-        response.setName(publisher.getName());
-        response.setWebsite(publisher.getWebsite());
-        response.setEmail(publisher.getEmail());
-        return response;
-    }
+  public PublisherResponse toResponse(Publisher publisher) {
+    PublisherResponse response = new PublisherResponse();
+    response.setId(publisher.getId());
+    response.setName(publisher.getName());
+    response.setWebsite(publisher.getWebsite());
+    response.setEmail(publisher.getEmail());
+    return response;
+  }
 }
-

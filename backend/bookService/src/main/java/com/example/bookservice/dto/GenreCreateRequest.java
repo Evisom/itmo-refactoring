@@ -8,10 +8,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GenreCreateRequest {
-    @NotBlank(message = "Name is required")
-    private String name;
+  @NotBlank(message = "Name is required")
+  private String name;
 
-    @Min(value = 1, message = "Popularity must be at least 1")
-    private Short popularity;
+  @Min(value = 1, message = "Popularity must be at least 1")
+  private Short popularity;
 }
-

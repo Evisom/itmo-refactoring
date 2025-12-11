@@ -1,11 +1,10 @@
 package com.example.shared.model;
 
 import jakarta.persistence.*;
+import java.time.LocalTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalTime;
 
 @Entity
 @Table(name = "library")
@@ -13,20 +12,19 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Library {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(name = "name", nullable = false)
-    private String name;
+  @Column(name = "name", nullable = false)
+  private String name;
 
-    @Column(name = "address", nullable = false)
-    private String address;
+  @Column(name = "address", nullable = false)
+  private String address;
 
-    @Column(name = "opening_time")
-    private LocalTime openingTime;
+  @Column(name = "opening_time")
+  private LocalTime openingTime;
 
-    @Column(name = "closing_time")
-    private LocalTime closingTime;
+  @Column(name = "closing_time")
+  private LocalTime closingTime;
 }
-

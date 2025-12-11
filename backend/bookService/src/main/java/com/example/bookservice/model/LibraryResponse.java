@@ -9,14 +9,13 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class LibraryResponse {
-    private Library library;
-    private Boolean available;
+  private Library library;
+  private Boolean available;
 
-    public static LibraryResponse fromBookCopyToResponse(BookCopy copy){
-        LibraryResponse response = new LibraryResponse();
-        response.setLibrary(copy.getLibrary());
-        response.setAvailable(copy.getAvailable());
-        return response;
-    }
-
+  public static LibraryResponse fromBookCopyToResponse(BookCopy copy) {
+    LibraryResponse response = new LibraryResponse();
+    response.setLibrary(copy.getLibrary());
+    response.setAvailable(copy.getAvailable());
+    return response;
+  }
 }

@@ -6,9 +6,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PublisherResponse {
-    private Long id;
-    private String name;
-    private String website;
-    private String email;
+  private Long id;
+  private String name;
+  private String website;
+  private String email;
 }
-

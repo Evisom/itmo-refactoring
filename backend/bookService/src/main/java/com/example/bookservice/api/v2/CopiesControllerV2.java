@@ -17,39 +17,38 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(EndpointsV2.COPIES)
 @RequiredArgsConstructor
 public class CopiesControllerV2 {
-    private final CopiesService copiesService;
+  private final CopiesService copiesService;
 
-    @PreAuthorize("hasRole('LIBRARIAN')")
-    @GetMapping
-    public ResponseEntity<Page<BookCopyResponse>> getCopies(
-            @RequestParam(required = false) Long bookId,
-            @RequestParam(required = false) Long libraryId,
-            Pageable pageable) {
-        return ResponseEntity.ok(copiesService.findBooks(bookId, libraryId, pageable));
-    }
+  @PreAuthorize("hasRole('LIBRARIAN')")
+  @GetMapping
+  public ResponseEntity<Page<BookCopyResponse>> getCopies(
+      @RequestParam(required = false) Long bookId,
+      @RequestParam(required = false) Long libraryId,
+      Pageable pageable) {
+    return ResponseEntity.ok(copiesService.findBooks(bookId, libraryId, pageable));
+  }
 
-    @PreAuthorize("hasRole('LIBRARIAN')")
-    @PostMapping
-    public ResponseEntity<BookCopyResponse> createCopy(@Valid @RequestBody BookCopyCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(copiesService.createBook(request));
-    }
+  @PreAuthorize("hasRole('LIBRARIAN')")
+  @PostMapping
+  public ResponseEntity<BookCopyResponse> createCopy(
+      @Valid @RequestBody BookCopyCreateRequest request) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(copiesService.createBook(request));
+  }
 
-    @PreAuthorize("hasRole('LIBRARIAN')")
-    @PutMapping("/{id}")
-    public ResponseEntity<BookCopyResponse> updateCopy(
-            @PathVariable Long id,
-            @Valid @RequestBody BookCopyUpdateRequest request) {
-        return ResponseEntity.ok(copiesService.updateCopy(id, request));
-    }
+  @PreAuthorize("hasRole('LIBRARIAN')")
+  @PutMapping("/{id}")
+  public ResponseEntity<BookCopyResponse> updateCopy(
+      @PathVariable Long id, @Valid @RequestBody BookCopyUpdateRequest request) {
+    return ResponseEntity.ok(copiesService.updateCopy(id, request));
+  }
 
-    @PreAuthorize("hasRole('LIBRARIAN')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCopy(@PathVariable Long id) {
-        if (copiesService.deleteBook(id)) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+  @PreAuthorize("hasRole('LIBRARIAN')")
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteCopy(@PathVariable Long id) {
+    if (copiesService.deleteBook(id)) {
+      return ResponseEntity.noContent().build();
+    } else {
+      return ResponseEntity.notFound().build();
     }
+  }
 }

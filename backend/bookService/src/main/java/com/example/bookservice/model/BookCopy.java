@@ -13,22 +13,21 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookCopy {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "book_id", nullable = false)
-    private Book book;
+  @ManyToOne
+  @JoinColumn(name = "book_id", nullable = false)
+  private Book book;
 
-    @ManyToOne
-    @JoinColumn(name = "library_id", nullable = false)
-    private Library library;
+  @ManyToOne
+  @JoinColumn(name = "library_id", nullable = false)
+  private Library library;
 
-    @Column(name = "inventory_number", nullable = false)
-    private String inventoryNumber;
+  @Column(name = "inventory_number", nullable = false)
+  private String inventoryNumber;
 
-    @Column(nullable = false)
-    private Boolean available;
-
+  @Column(nullable = false)
+  private Boolean available;
 }

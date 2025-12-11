@@ -14,16 +14,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Theme {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(name = "name", unique = true, nullable = false)
-    @NotNull
-    private String name;
+  @Column(name = "name", unique = true, nullable = false)
+  @NotNull
+  private String name;
 
-    @Column(name = "popularity", columnDefinition = "SMALLINT")
-    @Min(1)
-    private Short popularity;
+  @Column(name = "popularity", columnDefinition = "SMALLINT")
+  @Min(1)
+  private Short popularity;
 }
-
