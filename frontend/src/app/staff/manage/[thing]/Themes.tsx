@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import { TableSkeleton } from "@/shared/components/ui/Skeleton";
@@ -10,6 +12,7 @@ import { useThemes } from "@/features/books/hooks/useThemes";
 import { useCreateTheme } from "@/features/books/hooks/useCreateTheme";
 import { useDeleteTheme } from "@/features/books/hooks/useDeleteTheme";
 import { useErrorHandler } from "@/shared/utils/useErrorHandler";
+import { themeFormSchema, type ThemeFormData } from "@/shared/validation/schemas";
 
 import "./page.scss";
 
@@ -18,31 +21,29 @@ export const Themes = () => {
   const { themes, isLoading } = useThemes();
   const { createTheme, isLoading: creating } = useCreateTheme();
   const { deleteTheme, isLoading: deleting } = useDeleteTheme();
-  const [formState, setFormState] = useState({
-    name: "",
-    popularity: "",
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<ThemeFormData>({
+    resolver: zodResolver(themeFormSchema),
+    defaultValues: {
+      name: "",
+      popularity: "",
+    },
   });
 
-  const handleInputChange =
-    (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFormState((prevState) => ({
-        ...prevState,
-        [field]: event.target.value,
-      }));
-    };
-
-  const isValidForm = () =>
-    formState.name.trim() && /^\d+$/.test(formState.popularity);
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: ThemeFormData) => {
     try {
       await createTheme({
-        name: formState.name.trim(),
-        popularity: formState.popularity ? parseInt(formState.popularity, 10) : undefined,
+        name: data.name.trim(),
+        popularity: data.popularity,
       });
-      setFormState({ name: "", popularity: "" });
+      reset();
     } catch (err) {
-      handleError(err, "Themes.handleSubmit");
+      handleError(err, "Themes.onSubmit");
     }
   };
 
@@ -83,29 +84,43 @@ export const Themes = () => {
     <>
       <Card variant="outlined" className="card">
         <CardContent>
-          <div className="form">
+          <form onSubmit={handleSubmit(onSubmit)} className="form">
             <div className="controls">
-              <TextField
-                label="Название"
-                value={formState.name}
-                onChange={handleInputChange("name")}
+              <Controller
+                name="name"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Название"
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                )}
               />
-              <TextField
-                label="Популярность"
-                type="number"
-                value={formState.popularity}
-                onChange={handleInputChange("popularity")}
+              <Controller
+                name="popularity"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Популярность"
+                    type="number"
+                    error={!!errors.popularity}
+                    helperText={errors.popularity?.message}
+                  />
+                )}
               />
             </div>
 
             <Button
+              type="submit"
               variant="outlined"
-              disabled={!isValidForm() || creating}
-              onClick={handleSubmit}
+              disabled={creating}
             >
               Создать
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
 

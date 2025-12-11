@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import { TableSkeleton } from "@/shared/components/ui/Skeleton";
@@ -10,6 +12,7 @@ import { useGenres } from "@/features/books/hooks/useGenres";
 import { useCreateGenre } from "@/features/books/hooks/useCreateGenre";
 import { useDeleteGenre } from "@/features/books/hooks/useDeleteGenre";
 import { useErrorHandler } from "@/shared/utils/useErrorHandler";
+import { genreFormSchema, type GenreFormData } from "@/shared/validation/schemas";
 
 import "./page.scss";
 
@@ -18,31 +21,29 @@ export const Genres = () => {
   const { genres, isLoading } = useGenres();
   const { createGenre, isLoading: creating } = useCreateGenre();
   const { deleteGenre } = useDeleteGenre();
-  const [formState, setFormState] = useState({
-    name: "",
-    popularity: "",
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<GenreFormData>({
+    resolver: zodResolver(genreFormSchema),
+    defaultValues: {
+      name: "",
+      popularity: "",
+    },
   });
 
-  const handleInputChange =
-    (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFormState((prevState) => ({
-        ...prevState,
-        [field]: event.target.value,
-      }));
-    };
-
-  const isValidForm = () =>
-    formState.name.trim() && /^\d+$/.test(formState.popularity);
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: GenreFormData) => {
     try {
       await createGenre({
-        name: formState.name.trim(),
-        popularity: formState.popularity ? parseInt(formState.popularity, 10) : undefined,
+        name: data.name.trim(),
+        popularity: data.popularity,
       });
-      setFormState({ name: "", popularity: "" });
+      reset();
     } catch (err) {
-      handleError(err, "Genres.handleSubmit");
+      handleError(err, "Genres.onSubmit");
     }
   };
 
@@ -82,29 +83,43 @@ export const Genres = () => {
     <>
       <Card variant="outlined" className="card">
         <CardContent>
-          <div className="form">
+          <form onSubmit={handleSubmit(onSubmit)} className="form">
             <div className="controls">
-              <TextField
-                label="Название"
-                value={formState.name}
-                onChange={handleInputChange("name")}
+              <Controller
+                name="name"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Название"
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                )}
               />
-              <TextField
-                label="Популярность"
-                type="number"
-                value={formState.popularity}
-                onChange={handleInputChange("popularity")}
+              <Controller
+                name="popularity"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Популярность"
+                    type="number"
+                    error={!!errors.popularity}
+                    helperText={errors.popularity?.message}
+                  />
+                )}
               />
             </div>
 
             <Button
+              type="submit"
               variant="outlined"
-              disabled={!isValidForm() || creating}
-              onClick={handleSubmit}
+              disabled={creating}
             >
               Создать
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
 

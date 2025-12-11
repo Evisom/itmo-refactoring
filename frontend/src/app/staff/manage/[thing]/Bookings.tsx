@@ -22,15 +22,17 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useLibraries } from "@/features/books/hooks/useLibraries";
 import { useTransactions } from "@/features/transactions/hooks/useTransactions";
 import { useApproveTransaction } from "@/features/transactions/hooks/useApproveTransaction";
 import { useDeclineTransaction } from "@/features/transactions/hooks/useDeclineTransaction";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { transactionDeclineFormSchema, type TransactionDeclineFormData } from "@/shared/validation/schemas";
 
 const ApprovalsPage = () => {
   const [selectedLibrary, setSelectedLibrary] = useState<number | null>(null);
-  const [declineReason, setDeclineReason] = useState("");
   const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
   const [decliningRequestId, setDecliningRequestId] = useState<number | null>(
     null
@@ -47,6 +49,18 @@ const ApprovalsPage = () => {
   );
   const { approveTransaction, isLoading: approving } = useApproveTransaction();
   const { declineTransaction, isLoading: declining } = useDeclineTransaction();
+
+  const {
+    control: declineControl,
+    handleSubmit: handleDeclineSubmit,
+    formState: { errors: declineErrors },
+    reset: resetDecline,
+  } = useForm<TransactionDeclineFormData>({
+    resolver: zodResolver(transactionDeclineFormSchema),
+    defaultValues: {
+      comment: "",
+    },
+  });
 
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -71,18 +85,18 @@ const ApprovalsPage = () => {
     }
   };
 
-  const handleDecline = async () => {
-    if (!decliningRequestId || !declineReason.trim()) return;
+  const onDeclineSubmit = async (data: TransactionDeclineFormData) => {
+    if (!decliningRequestId) return;
 
     try {
-      await declineTransaction(decliningRequestId, { comment: declineReason });
+      await declineTransaction(decliningRequestId, { comment: data.comment });
       setSnackbar({
         open: true,
         message: "Заявка успешно отклонена",
         severity: "success",
       });
       setDeclineDialogOpen(false);
-      setDeclineReason("");
+      resetDecline();
       mutate();
     } catch (error) {
       console.error("Ошибка при отклонении заявки:", error);
@@ -92,6 +106,16 @@ const ApprovalsPage = () => {
         severity: "error",
       });
     }
+  };
+
+  const handleOpenDeclineDialog = (requestId: number) => {
+    setDecliningRequestId(requestId);
+    setDeclineDialogOpen(true);
+  };
+
+  const handleCloseDeclineDialog = () => {
+    setDeclineDialogOpen(false);
+    resetDecline();
   };
 
   if (!librariesData) return <LoadingSpinner fullScreen />;
@@ -173,10 +197,7 @@ const ApprovalsPage = () => {
                         variant="outlined"
                         color="error"
                         style={{ marginLeft: "10px" }}
-                        onClick={() => {
-                          setDecliningRequestId(request.id);
-                          setDeclineDialogOpen(true);
-                        }}
+                        onClick={() => handleOpenDeclineDialog(request.id)}
                         disabled={declining}
                       >
                         Отклонить
@@ -199,27 +220,37 @@ const ApprovalsPage = () => {
       {/* Decline Reason Dialog */}
       <Dialog
         open={declineDialogOpen}
-        onClose={() => setDeclineDialogOpen(false)}
+        onClose={handleCloseDeclineDialog}
       >
-        <DialogTitle>Причина отказа</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Причина"
-            multiline
-            rows={4}
-            fullWidth
-            value={declineReason}
-            onChange={(e) => setDeclineReason(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeclineDialogOpen(false)} color="primary">
-            Отмена
-          </Button>
-          <Button onClick={handleDecline} color="error" disabled={declining}>
-            Отклонить
-          </Button>
-        </DialogActions>
+        <form onSubmit={handleDeclineSubmit(onDeclineSubmit)}>
+          <DialogTitle>Причина отказа</DialogTitle>
+          <DialogContent>
+            <Controller
+              name="comment"
+              control={declineControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Причина"
+                  multiline
+                  rows={4}
+                  fullWidth
+                  error={!!declineErrors.comment}
+                  helperText={declineErrors.comment?.message}
+                  sx={{ mt: 1 }}
+                />
+              )}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeclineDialog} color="primary" type="button">
+              Отмена
+            </Button>
+            <Button type="submit" color="error" disabled={declining}>
+              Отклонить
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
       {/* Snackbar for Feedback */}

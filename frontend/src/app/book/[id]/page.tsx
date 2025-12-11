@@ -18,6 +18,8 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import BookCover from "@/features/books/components/BookCover";
@@ -27,6 +29,7 @@ import { useCreateRating } from "@/features/ratings/hooks/useCreateRating";
 import { useLibraries } from "@/features/books/hooks/useLibraries";
 import { useReadingStatus } from "@/features/transactions/hooks/useReadingStatus";
 import { useCreateTransaction } from "@/features/transactions/hooks/useCreateTransaction";
+import { ratingFormSchema, type RatingFormData } from "@/shared/validation/schemas";
 
 const BookPage = ({ params }: { params: { id: string } }) => {
   const { id } = React.use(params);
@@ -40,16 +43,24 @@ const BookPage = ({ params }: { params: { id: string } }) => {
   const { createTransaction, isLoading: creatingTransaction } = useCreateTransaction();
   const { createRating, isLoading: creatingRating } = useCreateRating();
 
-  const [newReview, setNewReview] = useState({
-    ratingValue: 0,
-    review: "",
+  const {
+    control: ratingControl,
+    handleSubmit: handleRatingSubmit,
+    formState: { errors: ratingErrors },
+    reset: resetRating,
+  } = useForm<RatingFormData>({
+    resolver: zodResolver(ratingFormSchema),
+    defaultValues: {
+      rating: 0,
+      comment: "",
+    },
   });
 
   const [reserving, setReserving] = useState<number | null>(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
-    severity: "success", // Can be 'success' or 'error'
+    severity: "success" as "success" | "error",
   });
 
   const handleSnackbarClose = () => {
@@ -94,18 +105,14 @@ const BookPage = ({ params }: { params: { id: string } }) => {
 
   const groupedData = Object.values(groupedCopies || {});
 
-  const handleReviewChange = (field: string, value: unknown) => {
-    setNewReview((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleReviewSubmit = async () => {
+  const onRatingSubmit = async (data: RatingFormData) => {
     try {
       await createRating({
         bookId: bookId,
-        rating: newReview.ratingValue,
-        comment: newReview.review || undefined,
+        rating: data.rating,
+        comment: data.comment || undefined,
       });
-      setNewReview({ ratingValue: 0, review: "" });
+      resetRating();
     } catch (error) {
       console.error("Ошибка при отправке отзыва:", error);
       setSnackbar({
@@ -241,33 +248,51 @@ const BookPage = ({ params }: { params: { id: string } }) => {
           </Typography>
           <Card>
             <CardContent>
-              <Box>
-                <Typography>Рейтинг</Typography>
-                <Rating
-                  value={newReview.ratingValue}
-                  onChange={(e, value) =>
-                    handleReviewChange("ratingValue", value)
-                  }
+              <form onSubmit={handleRatingSubmit(onRatingSubmit)}>
+                <Box>
+                  <Typography>Рейтинг</Typography>
+                  <Controller
+                    name="rating"
+                    control={ratingControl}
+                    render={({ field }) => (
+                      <Rating
+                        value={field.value}
+                        onChange={(_event, value) => field.onChange(value || 0)}
+                      />
+                    )}
+                  />
+                  {ratingErrors.rating && (
+                    <Typography variant="caption" color="error" sx={{ display: "block", mt: 0.5 }}>
+                      {ratingErrors.rating.message}
+                    </Typography>
+                  )}
+                </Box>
+                <Controller
+                  name="comment"
+                  control={ratingControl}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Отзыв"
+                      multiline
+                      rows={4}
+                      fullWidth
+                      error={!!ratingErrors.comment}
+                      helperText={ratingErrors.comment?.message}
+                      style={{ marginTop: "10px" }}
+                    />
+                  )}
                 />
-              </Box>
-              <TextField
-                label="Отзыв"
-                multiline
-                rows={4}
-                fullWidth
-                value={newReview.review}
-                onChange={(e) => handleReviewChange("review", e.target.value)}
-                style={{ marginTop: "10px" }}
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                style={{ marginTop: "10px" }}
-                onClick={handleReviewSubmit}
-                disabled={!newReview.ratingValue || !newReview.review.trim() || creatingRating}
-              >
-                Отправить
-              </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  style={{ marginTop: "10px" }}
+                  disabled={creatingRating}
+                >
+                  Отправить
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </>
