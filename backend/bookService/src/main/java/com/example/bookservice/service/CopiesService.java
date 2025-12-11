@@ -4,8 +4,8 @@ import com.example.bookservice.dto.BookCopyCreateRequest;
 import com.example.bookservice.dto.BookCopyResponse;
 import com.example.bookservice.dto.BookCopyUpdateRequest;
 import com.example.bookservice.dto.mapper.BookCopyMapper;
-import com.example.bookservice.exception.BookAlreadyExistException;
-import com.example.bookservice.exception.BookNotFoundException;
+import com.example.shared.exception.ConflictException;
+import com.example.shared.exception.ResourceNotFoundException;
 import com.example.bookservice.model.BookCopy;
 import com.example.bookservice.repository.BookRepository;
 import com.example.bookservice.repository.CopiesRepository;
@@ -58,7 +58,7 @@ public class CopiesService {
     public BookCopyResponse createBook(BookCopyCreateRequest request) {
         BookCopy bookFromIN = copiesRepository.findByInventoryNumber(request.getInventoryNumber());
         if (bookFromIN != null) {
-            throw new BookAlreadyExistException("Book copy already exist");
+            throw new ConflictException("Book copy already exist");
         }
         BookCopy newBook = new BookCopy();
         newBook.setAvailable(request.getAvailable());
@@ -71,7 +71,7 @@ public class CopiesService {
     @Transactional
     public BookCopyResponse updateCopy(Long id, BookCopyUpdateRequest request) {
         BookCopy oldBook = copiesRepository.findById(id)
-                .orElseThrow(() -> new BookNotFoundException("Book not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Book copy not found with id: " + id));
 
         oldBook.setAvailable(request.getAvailable());
         oldBook.setBook(bookRepository.findById(request.getBookId()).orElseThrow());

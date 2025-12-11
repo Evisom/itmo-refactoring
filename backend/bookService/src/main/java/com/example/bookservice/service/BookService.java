@@ -2,8 +2,8 @@ package com.example.bookservice.service;
 
 import com.example.bookservice.dto.*;
 import com.example.bookservice.dto.mapper.BookMapper;
-import com.example.bookservice.exception.BookAlreadyExistException;
-import com.example.bookservice.exception.BookNotFoundException;
+import com.example.shared.exception.ConflictException;
+import com.example.shared.exception.ResourceNotFoundException;
 import com.example.shared.model.Author;
 import com.example.shared.model.Book;
 import com.example.shared.model.Genre;
@@ -84,7 +84,7 @@ public class BookService {
     @Transactional(readOnly = true)
     public BookResponse findBookById(Long id) {
         Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new BookNotFoundException("Book not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
         return bookMapper.toResponse(book);
     }
 
@@ -92,7 +92,7 @@ public class BookService {
     public BookResponse createBook(BookCreateRequest request) {
         Book bookFromISBN = bookRepository.findBookByISBN(request.getISBN());
         if (bookFromISBN != null) {
-            throw new BookAlreadyExistException("Book already exist");
+            throw new ConflictException("Book already exist");
         }
 
         Book book = toEntity(request);
@@ -102,7 +102,7 @@ public class BookService {
     @Transactional
     public BookResponse updateBook(Long id, BookUpdateRequest request) {
         Book oldBook = bookRepository.findById(id)
-                .orElseThrow(() -> new BookNotFoundException("Book not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
 
         updateEntity(oldBook, request);
         return bookMapper.toResponse(bookRepository.save(oldBook));

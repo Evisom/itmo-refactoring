@@ -50,7 +50,8 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/swagger-ui/**", "/v3/**").permitAll()
-                        .requestMatchers("/api/v1/operations/history", "/api/v1/operations/reviews/**", "/api/v1/operations/readingStatus").permitAll() // Публичные endpoints
+                        .requestMatchers("/api/v1/operations/history", "/api/v1/operations/reviews/**", "/api/v1/operations/readingStatus").permitAll() // Публичные endpoints v1
+                        .requestMatchers("/api/v2/transactions/reading-status", "/api/v2/ratings").permitAll() // Публичные endpoints v2
                         .anyRequest().authenticated()) // Остальные требуют аутентификации
                 .httpBasic().disable();
         return http.build();

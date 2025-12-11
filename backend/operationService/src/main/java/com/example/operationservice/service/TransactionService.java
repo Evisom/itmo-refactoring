@@ -6,10 +6,10 @@ import com.example.operationservice.dto.TransactionDeclineRequest;
 import com.example.operationservice.dto.TransactionResponse;
 import com.example.operationservice.dto.TransactionReturnRequest;
 import com.example.operationservice.dto.mapper.TransactionMapper;
-import com.example.operationservice.exception.BookCopyNotFoundInLibraryException;
+import com.example.shared.exception.ResourceNotFoundException;
+import com.example.shared.exception.BusinessLogicException;
 import com.example.operationservice.model.BookCopy;
 import com.example.operationservice.repository.CopiesRepository;
-import com.example.operationservice.exception.BookNotAprrovedYetException;
 import com.example.operationservice.model.*;
 import com.example.operationservice.repository.BookTransactionRepository;
 import com.example.operationservice.config.CustomUserDetails;
@@ -46,7 +46,7 @@ public class TransactionService {
         List<BookCopy> bookCopyList = copiesRepository.findByBookIdAndLibraryId(id, request.getLibraryId())
                 .stream().filter(status -> status.getAvailable() == Boolean.TRUE).collect(java.util.stream.Collectors.toList());
         if (bookCopyList.isEmpty()) {
-            throw new BookCopyNotFoundInLibraryException("Book copy not found in Library");
+            throw new ResourceNotFoundException("Book copy not found in Library");
         }
         BookCopy book = bookCopyList.get(0);
         transaction.setBookCopy(book);
@@ -92,7 +92,7 @@ public class TransactionService {
             copiesRepository.save(bookCopy);
 
         } else {
-            throw new RuntimeException();
+            throw new BusinessLogicException("Book copy is not available");
         }
 
         // Получаем email из JWT для отправки уведомления
@@ -121,7 +121,7 @@ public class TransactionService {
             ));
             kafkaProducer.sendMessage(json);
         } catch (JsonProcessingException ex) {
-            throw new RuntimeException();
+            throw new BusinessLogicException("Failed to send email notification");
         }
 
         return transactionMapper.toBookTransactionResponse(bookTransactionRepository.save(transaction));
@@ -160,7 +160,7 @@ public class TransactionService {
             ));
             kafkaProducer.sendMessage(json);
         } catch (JsonProcessingException ex) {
-            throw new RuntimeException();
+            throw new BusinessLogicException("Failed to send email notification");
         }
         return transactionMapper.toBookTransactionResponse(bookTransactionRepository.save(transaction));
     }
@@ -169,14 +169,14 @@ public class TransactionService {
     public BookTransactionResponse returnBack(TransactionReturnRequest request) {
         List<BookCopy> bookCopies = copiesRepository.findByInventoryNumber(request.getInventoryNumber());
         if (bookCopies == null || bookCopies.isEmpty()) {
-            throw new BookCopyNotFoundInLibraryException("Book copy with inventory number " + request.getInventoryNumber() + " not found");
+            throw new ResourceNotFoundException("Book copy with inventory number " + request.getInventoryNumber() + " not found");
         }
         // Если несколько копий с одним инвентарным номером, берем первую
         BookCopy bookCopy = bookCopies.get(0);
         
         List<BookTransaction> transactions = bookTransactionRepository.findByBookCopyIdAndStatusApproved(bookCopy.getId());
         if (transactions == null || transactions.isEmpty()) {
-            throw new BookNotAprrovedYetException("book not aprroved yet");
+            throw new BusinessLogicException("Book transaction not approved yet");
         }
         // Берем самую новую транзакцию (уже отсортирована по creationDate DESC)
         BookTransaction bookTransaction = transactions.get(0);
@@ -188,12 +188,13 @@ public class TransactionService {
 
     @Transactional
     public Void cancel(Long id) {
-        BookTransaction bookTransaction = bookTransactionRepository.findById(id).orElseThrow(() -> new BookCopyNotFoundInLibraryException("no such transaction"));
+        BookTransaction bookTransaction = bookTransactionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found with id: " + id));
         if (bookTransaction.getStatus() == Status.PENDING) {
             bookTransactionRepository.delete(bookTransaction);
             return null;
         } else {
-            throw new RuntimeException("status not pending");
+            throw new BusinessLogicException("Transaction status is not PENDING");
         }
     }
 
