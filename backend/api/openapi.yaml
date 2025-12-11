@@ -1,0 +1,2030 @@
+openapi: 3.0.3
+info:
+  title: BooBook API
+  description: |
+    REST API для системы управления библиотекой BooBook.
+    
+    Система состоит из двух микросервисов:
+    - **bookService** (порт 8082) - управление книгами, авторами, жанрами, темами, издательствами, библиотеками и экземплярами книг
+    - **operationService** (порт 8083) - управление транзакциями (бронирование, выдача, возврат), рейтингами и историями
+    
+    Все endpoints требуют аутентификации через Keycloak (OAuth2/OIDC).
+    Используется Bearer токен в заголовке Authorization.
+  version: 1.0.0
+  contact:
+    name: BooBook API Support
+    email: support@boobook.example.com
+
+servers:
+  - url: http://localhost:8082/api/v1
+    description: bookService (локальный)
+  - url: http://localhost:8083/api/v1
+    description: operationService (локальный)
+  - url: http://book:8082/api/v1
+    description: bookService (Docker)
+  - url: http://operation:8083/api/v1
+    description: operationService (Docker)
+
+tags:
+  - name: Books
+    description: Управление книгами
+  - name: Authors
+    description: Управление авторами
+  - name: Genres
+    description: Управление жанрами
+  - name: Themes
+    description: Управление темами
+  - name: Publishers
+    description: Управление издательствами
+  - name: Libraries
+    description: Управление библиотеками
+  - name: Book Copies
+    description: Управление экземплярами книг
+  - name: Transactions
+    description: Управление транзакциями (бронирование, выдача, возврат)
+  - name: Ratings
+    description: Управление рейтингами и отзывами
+  - name: History
+    description: История операций пользователя
+  - name: Users
+    description: Информация о пользователях
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ============================================
+  # BOOK SERVICE ENDPOINTS
+  # ============================================
+  
+  /library/find:
+    get:
+      tags:
+        - Books
+      summary: Поиск книг
+      description: Поиск книг с фильтрацией по различным критериям
+      operationId: findBooks
+      parameters:
+        - name: authors
+          in: query
+          description: Список имен авторов для фильтрации
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: genres
+          in: query
+          description: Список жанров для фильтрации
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: themes
+          in: query
+          description: Список тем для фильтрации
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: publishers
+          in: query
+          description: Список издательств для фильтрации
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: minCopies
+          in: query
+          description: Минимальное количество экземпляров
+          required: false
+          schema:
+            type: integer
+        - name: maxCopies
+          in: query
+          description: Максимальное количество экземпляров
+          required: false
+          schema:
+            type: integer
+        - name: available
+          in: query
+          description: Фильтр по доступности
+          required: false
+          schema:
+            type: boolean
+        - name: name
+          in: query
+          description: Поиск по названию книги
+          required: false
+          schema:
+            type: string
+        - name: popularity
+          in: query
+          description: Фильтр по популярности
+          required: false
+          schema:
+            type: string
+        - name: ratingMIN
+          in: query
+          description: Минимальный рейтинг
+          required: false
+          schema:
+            type: number
+            format: float
+        - name: ratingMAX
+          in: query
+          description: Максимальный рейтинг
+          required: false
+          schema:
+            type: number
+            format: float
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 0)
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: sort
+          in: query
+          description: Поле для сортировки
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список книг найден успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageBookModel'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/books/{id}:
+    get:
+      tags:
+        - Books
+      summary: Получить книгу по ID
+      description: Возвращает информацию о книге по её идентификатору
+      operationId: getBookById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор книги
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Книга найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookModel'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Books
+      summary: Обновить книгу
+      description: Обновляет информацию о книге. Требует роль LIBRARIAN.
+      operationId: updateBook
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор книги
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Book'
+      responses:
+        '200':
+          description: Книга обновлена успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookModel'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Books
+      summary: Удалить книгу
+      description: Удаляет книгу. Требует роль LIBRARIAN.
+      operationId: deleteBook
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор книги
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Книга удалена успешно
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/newBook:
+    post:
+      tags:
+        - Books
+      summary: Создать новую книгу
+      description: Создает новую книгу. Требует роль LIBRARIAN.
+      operationId: createBook
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Book'
+      responses:
+        '200':
+          description: Книга создана успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookModel'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/authors:
+    get:
+      tags:
+        - Authors
+      summary: Получить всех авторов
+      description: Возвращает список всех авторов
+      operationId: getAllAuthors
+      responses:
+        '200':
+          description: Список авторов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuthorModel'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Authors
+      summary: Создать нового автора
+      description: Создает нового автора. Требует роль LIBRARIAN.
+      operationId: createAuthor
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Author'
+      responses:
+        '200':
+          description: Автор создан успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorModel'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/authors/{id}:
+    delete:
+      tags:
+        - Authors
+      summary: Удалить автора
+      description: Удаляет автора. Требует роль LIBRARIAN.
+      operationId: deleteAuthor
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор автора
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Автор удален успешно
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/genres:
+    get:
+      tags:
+        - Genres
+      summary: Получить все жанры
+      description: Возвращает список всех жанров
+      operationId: getAllGenres
+      responses:
+        '200':
+          description: Список жанров
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Genre'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Genres
+      summary: Создать новый жанр
+      description: Создает новый жанр. Требует роль LIBRARIAN.
+      operationId: createGenre
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Genre'
+      responses:
+        '200':
+          description: Жанр создан успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Genre'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/genres/{id}:
+    delete:
+      tags:
+        - Genres
+      summary: Удалить жанр
+      description: Удаляет жанр. Требует роль LIBRARIAN.
+      operationId: deleteGenre
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор жанра
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Жанр удален успешно
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/themes:
+    get:
+      tags:
+        - Themes
+      summary: Получить все темы
+      description: Возвращает список всех тем
+      operationId: getAllThemes
+      responses:
+        '200':
+          description: Список тем
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Theme'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Themes
+      summary: Создать новую тему
+      description: Создает новую тему. Требует роль LIBRARIAN.
+      operationId: createTheme
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Theme'
+      responses:
+        '200':
+          description: Тема создана успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Theme'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/themes/{id}:
+    delete:
+      tags:
+        - Themes
+      summary: Удалить тему
+      description: Удаляет тему. Требует роль LIBRARIAN.
+      operationId: deleteTheme
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор темы
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Тема удалена успешно
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/publishers:
+    get:
+      tags:
+        - Publishers
+      summary: Получить все издательства
+      description: Возвращает список всех издательств
+      operationId: getAllPublishers
+      responses:
+        '200':
+          description: Список издательств
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Publisher'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Publishers
+      summary: Создать новое издательство
+      description: Создает новое издательство. Требует роль LIBRARIAN.
+      operationId: createPublisher
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Publisher'
+      responses:
+        '200':
+          description: Издательство создано успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publisher'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/publishers/{id}:
+    delete:
+      tags:
+        - Publishers
+      summary: Удалить издательство
+      description: Удаляет издательство. Требует роль LIBRARIAN.
+      operationId: deletePublisher
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор издательства
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Издательство удалено успешно
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/allLibraries:
+    get:
+      tags:
+        - Libraries
+      summary: Получить все библиотеки
+      description: Возвращает список всех библиотек
+      operationId: getAllLibraries
+      responses:
+        '200':
+          description: Список библиотек
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Library'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/allLibraries/{bookId}:
+    get:
+      tags:
+        - Libraries
+      summary: Найти экземпляры книги в библиотеках
+      description: Возвращает список библиотек с информацией о наличии экземпляров книги
+      operationId: findBookCopyInLibrary
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          description: Идентификатор книги
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 0)
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: sort
+          in: query
+          description: Поле для сортировки
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список библиотек с экземплярами
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageLibraryResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/new:
+    post:
+      tags:
+        - Libraries
+      summary: Создать новую библиотеку
+      description: Создает новую библиотеку. Требует роль ADMIN.
+      operationId: createLibrary
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Library'
+      responses:
+        '200':
+          description: Библиотека создана успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Library'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/upload:
+    post:
+      tags:
+        - Book Copies
+      summary: Импорт экземпляров книг из CSV
+      description: Импортирует экземпляры книг из CSV файла. Требует роль LIBRARIAN.
+      operationId: importBookCopies
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV файл с экземплярами книг
+      responses:
+        '200':
+          description: Экземпляры книг импортированы успешно
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Book copies imported successfully"
+        '400':
+          description: Ошибка при импорте
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Error importing book copies: invalid format"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/copies:
+    get:
+      tags:
+        - Book Copies
+      summary: Найти экземпляры книг
+      description: Поиск экземпляров книг с фильтрацией. Требует роль LIBRARIAN.
+      operationId: findBookCopies
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: query
+          description: Фильтр по ID книги
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: libraryId
+          in: query
+          description: Фильтр по ID библиотеки
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 0)
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: sort
+          in: query
+          description: Поле для сортировки
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список экземпляров найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageBookCopyModel'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Book Copies
+      summary: Создать новый экземпляр книги
+      description: Создает новый экземпляр книги в библиотеке. Требует роль LIBRARIAN.
+      operationId: createBookCopy
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookCopyModel'
+      responses:
+        '200':
+          description: Экземпляр создан успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookCopyModel'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /library/copies/{id}:
+    put:
+      tags:
+        - Book Copies
+      summary: Обновить экземпляр книги
+      description: Обновляет информацию об экземпляре книги. Требует роль LIBRARIAN.
+      operationId: updateBookCopy
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор экземпляра
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookCopyModel'
+      responses:
+        '200':
+          description: Экземпляр обновлен успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookCopyModel'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Book Copies
+      summary: Удалить экземпляр книги
+      description: Удаляет экземпляр книги. Требует роль LIBRARIAN.
+      operationId: deleteBookCopy
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор экземпляра
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Экземпляр удален успешно
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================
+  # OPERATION SERVICE ENDPOINTS
+  # ============================================
+
+  /operations:
+    get:
+      tags:
+        - Transactions
+      summary: Получить все запросы на выдачу книг
+      description: Возвращает список всех запросов на выдачу книг для указанной библиотеки. Требует роль LIBRARIAN.
+      operationId: getAllRequests
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: libraryId
+          in: query
+          required: true
+          description: Идентификатор библиотеки
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Список запросов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /operations/readingStatus:
+    get:
+      tags:
+        - Transactions
+      summary: Получить статус чтения книги
+      description: Возвращает список статусов транзакций для указанной книги текущего пользователя
+      operationId: getBookStatus
+      parameters:
+        - name: bookId
+          in: query
+          required: true
+          description: Идентификатор книги
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Список статусов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionStatus'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /operations/books/{id}/reserve:
+    post:
+      tags:
+        - Transactions
+      summary: Забронировать книгу
+      description: Создает запрос на бронирование книги в указанной библиотеке
+      operationId: reserveBook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор книги
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LibraryRequest'
+      responses:
+        '200':
+          description: Книга забронирована успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookTransactionModel'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /operations/approve/{id}:
+    post:
+      tags:
+        - Transactions
+      summary: Одобрить запрос на выдачу книги
+      description: Одобряет запрос на выдачу книги и выдает книгу пользователю. Требует роль LIBRARIAN.
+      operationId: approveRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор транзакции
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Запрос одобрен успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookTransactionModel'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /operations/decline/{id}:
+    post:
+      tags:
+        - Transactions
+      summary: Отклонить запрос на выдачу книги
+      description: Отклоняет запрос на выдачу книги с указанием причины. Требует роль LIBRARIAN.
+      operationId: declineRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор транзакции
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+      responses:
+        '200':
+          description: Запрос отклонен успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookTransactionModel'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /operations/return:
+    post:
+      tags:
+        - Transactions
+      summary: Вернуть книгу
+      description: Регистрирует возврат книги по инвентарному номеру. Требует роль LIBRARIAN.
+      operationId: returnBook
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReturnRequest'
+      responses:
+        '200':
+          description: Книга возвращена успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookTransactionModel'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /operations/transaction/cancel/{id}:
+    post:
+      tags:
+        - Transactions
+      summary: Отменить транзакцию
+      description: Отменяет транзакцию (только для статуса PENDING)
+      operationId: cancelTransaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор транзакции
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Транзакция отменена успешно
+        '400':
+          description: Транзакция не может быть отменена (статус не PENDING)
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /operations/libraryReport/{libraryId}:
+    get:
+      tags:
+        - Transactions
+      summary: Получить отчет по библиотеке
+      description: Возвращает отчет по библиотеке с информацией о книгах и количестве экземпляров. Требует роль LIBRARIAN.
+      operationId: getLibraryReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: libraryId
+          in: path
+          required: true
+          description: Идентификатор библиотеки
+          schema:
+            type: integer
+            format: int64
+        - name: date
+          in: query
+          description: Дата для фильтрации отчета
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Отчет получен успешно
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LibraryReportResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /operations/reviews/{bookId}:
+    get:
+      tags:
+        - Ratings
+      summary: Получить рейтинги книги
+      description: Возвращает список всех рейтингов и отзывов для указанной книги
+      operationId: getRatingsByBook
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          description: Идентификатор книги
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Список рейтингов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RatingModel'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /operations/reviews:
+    post:
+      tags:
+        - Ratings
+      summary: Создать новый рейтинг
+      description: Создает новый рейтинг и отзыв на книгу
+      operationId: createReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RatingModel'
+      responses:
+        '200':
+          description: Рейтинг создан успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatingModel'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /operations/history:
+    get:
+      tags:
+        - History
+      summary: Получить историю операций пользователя
+      description: Возвращает объединенную историю рейтингов и транзакций пользователя, отсортированную по времени
+      operationId: getUnifiedHistory
+      parameters:
+        - name: email
+          in: query
+          description: Email пользователя для фильтрации (опционально, по умолчанию используется текущий пользователь)
+          required: false
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: История операций
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnifiedData'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /user-info:
+    get:
+      tags:
+        - Users
+      summary: Получить информацию о текущем пользователе
+      description: Возвращает информацию о текущем аутентифицированном пользователе из Keycloak
+      operationId: getUserInfo
+      responses:
+        '200':
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT токен от Keycloak. Получите токен через OAuth2/OIDC flow в Keycloak.
+        Пример заголовка: `Authorization: Bearer <token>`
+
+  schemas:
+    # ============================================
+    # BOOK SERVICE SCHEMAS
+    # ============================================
+
+    Book:
+      type: object
+      required:
+        - title
+        - ISBN
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор книги
+          readOnly: true
+        title:
+          type: string
+          maxLength: 500
+          description: Название книги
+          example: "Война и мир"
+        yearPublished:
+          type: integer
+          minimum: 1
+          maximum: 2025
+          description: Год издания
+          example: 1869
+        ISBN:
+          type: string
+          maxLength: 20
+          description: ISBN книги (уникальный)
+          example: "978-5-17-123456-7"
+        genreId:
+          type: integer
+          format: int64
+          description: Идентификатор жанра
+          nullable: true
+        publisherId:
+          type: integer
+          format: int64
+          description: Идентификатор издательства
+          nullable: true
+        themeId:
+          type: integer
+          format: int64
+          description: Идентификатор темы
+          nullable: true
+        authorIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: Список идентификаторов авторов
+
+    BookModel:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор книги
+        title:
+          type: string
+          description: Название книги
+        yearPublished:
+          type: integer
+          description: Год издания
+        ISBN:
+          type: string
+          description: ISBN книги
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorModel'
+          description: Список авторов
+        copies:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookCopyModel'
+          description: Список экземпляров книги
+        genre:
+          $ref: '#/components/schemas/Genre'
+        theme:
+          $ref: '#/components/schemas/Theme'
+        publisher:
+          $ref: '#/components/schemas/Publisher'
+        rating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 5
+          description: Средний рейтинг книги
+
+    Author:
+      type: object
+      required:
+        - name
+        - surname
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор автора
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+          description: Имя автора
+          example: "Лев"
+        surname:
+          type: string
+          maxLength: 100
+          description: Фамилия автора
+          example: "Толстой"
+        birthDate:
+          type: string
+          format: date
+          description: Дата рождения
+          example: "1828-09-09"
+
+    AuthorModel:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор автора
+        name:
+          type: string
+          description: Имя автора
+        surname:
+          type: string
+          description: Фамилия автора
+        birthDate:
+          type: string
+          format: date
+          description: Дата рождения
+
+    Genre:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор жанра
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+          description: Название жанра (уникальное)
+          example: "Роман"
+        popularity:
+          type: integer
+          format: int16
+          minimum: 1
+          maximum: 100
+          description: Популярность жанра (1-100)
+          example: 85
+
+    Theme:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор темы
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+          description: Название темы (уникальное)
+          example: "Любовь"
+        popularity:
+          type: integer
+          format: int16
+          minimum: 1
+          maximum: 100
+          description: Популярность темы (1-100)
+          example: 90
+
+    Publisher:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор издательства
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+          description: Название издательства (уникальное)
+          example: "Эксмо"
+        website:
+          type: string
+          maxLength: 500
+          description: Веб-сайт издательства
+          example: "https://eksmo.ru"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Email издательства (уникальный)
+          example: "info@eksmo.ru"
+
+    Library:
+      type: object
+      required:
+        - name
+        - address
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор библиотеки
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+          description: Название библиотеки
+          example: "Центральная библиотека"
+        address:
+          type: string
+          maxLength: 500
+          description: Адрес библиотеки
+          example: "ул. Ленина, 1"
+        openingTime:
+          type: string
+          format: time
+          description: Время открытия
+          example: "09:00:00"
+        closingTime:
+          type: string
+          format: time
+          description: Время закрытия
+          example: "18:00:00"
+
+    LibraryResponse:
+      type: object
+      properties:
+        library:
+          $ref: '#/components/schemas/Library'
+        available:
+          type: boolean
+          description: Доступность экземпляра в библиотеке
+
+    BookCopyModel:
+      type: object
+      required:
+        - bookId
+        - libraryId
+        - inventoryNumber
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор экземпляра
+          readOnly: true
+        bookId:
+          type: integer
+          format: int64
+          description: Идентификатор книги
+        libraryId:
+          type: integer
+          format: int64
+          description: Идентификатор библиотеки
+        inventoryNumber:
+          type: string
+          maxLength: 50
+          description: Инвентарный номер (уникальный)
+          example: "LIB-001-2024"
+        available:
+          type: boolean
+          default: true
+          description: Доступность экземпляра
+
+    # ============================================
+    # OPERATION SERVICE SCHEMAS
+    # ============================================
+
+    BookTransactionModel:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор транзакции
+        bookCopyId:
+          type: integer
+          format: int64
+          description: Идентификатор экземпляра книги
+        userId:
+          type: string
+          description: Идентификатор пользователя из Keycloak
+        borrowDate:
+          type: string
+          format: date-time
+          description: Дата выдачи книги
+          nullable: true
+        returnDate:
+          type: string
+          format: date-time
+          description: Дата возврата книги
+          nullable: true
+        creationDate:
+          type: string
+          format: date-time
+          description: Дата создания запроса
+        returned:
+          type: boolean
+          default: false
+          description: Флаг возврата
+        status:
+          type: string
+          enum:
+            - PENDING
+            - REJECTED
+            - APPROVED
+            - RETURNED
+          description: Статус транзакции
+        comment:
+          type: string
+          description: Комментарий к транзакции
+          nullable: true
+
+    TransactionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор транзакции
+        firstName:
+          type: string
+          nullable: true
+          description: Имя пользователя (получается из Keycloak)
+        lastName:
+          type: string
+          nullable: true
+          description: Фамилия пользователя (получается из Keycloak)
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email пользователя (получается из Keycloak)
+        title:
+          type: string
+          description: Название книги
+        author:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorModel'
+          description: Список авторов книги
+        inventoryId:
+          type: string
+          description: Инвентарный номер экземпляра
+        status:
+          type: string
+          enum:
+            - PENDING
+            - REJECTED
+            - APPROVED
+            - RETURNED
+          description: Статус транзакции
+
+    TransactionStatus:
+      type: string
+      enum:
+        - PENDING
+        - REJECTED
+        - APPROVED
+        - RETURNED
+      description: Статус транзакции
+
+    LibraryRequest:
+      type: object
+      required:
+        - libraryId
+      properties:
+        libraryId:
+          type: integer
+          format: int64
+          description: Идентификатор библиотеки
+          example: 1
+
+    Reason:
+      type: object
+      properties:
+        comment:
+          type: string
+          description: Причина отклонения запроса
+          example: "Книга временно недоступна"
+
+    ReturnRequest:
+      type: object
+      required:
+        - invNumber
+      properties:
+        invNumber:
+          type: string
+          description: Инвентарный номер возвращаемой книги
+          example: "LIB-001-2024"
+
+    RatingModel:
+      type: object
+      required:
+        - bookId
+        - ratingValue
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор рейтинга
+          readOnly: true
+        userId:
+          type: string
+          description: Идентификатор пользователя из Keycloak
+          readOnly: true
+        bookId:
+          type: integer
+          format: int64
+          description: Идентификатор книги
+        book:
+          $ref: '#/components/schemas/BookModel'
+          description: Информация о книге
+          readOnly: true
+        ratingValue:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Оценка книги (1-5)
+          example: 5
+        review:
+          type: string
+          description: Текстовый отзыв
+          nullable: true
+        time:
+          type: string
+          format: date-time
+          description: Время создания рейтинга
+          readOnly: true
+
+    UnifiedData:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор записи
+        type:
+          type: string
+          enum:
+            - Rating
+            - BookTransaction
+          description: Тип записи
+        time:
+          type: string
+          format: date-time
+          description: Время события
+        userId:
+          type: string
+          description: Идентификатор пользователя
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email пользователя
+        ratingValue:
+          type: integer
+          nullable: true
+          description: Оценка (для типа Rating)
+        review:
+          type: string
+          nullable: true
+          description: Отзыв (для типа Rating)
+        title:
+          type: string
+          nullable: true
+          description: Название книги
+        author:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorModel'
+          nullable: true
+          description: Список авторов
+        library:
+          $ref: '#/components/schemas/Library'
+          nullable: true
+          description: Библиотека (для типа BookTransaction)
+        borrowDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Дата выдачи (для типа BookTransaction)
+        status:
+          type: string
+          nullable: true
+          description: Статус транзакции (для типа BookTransaction)
+        comment:
+          type: string
+          nullable: true
+          description: Комментарий (для типа BookTransaction)
+        invNumber:
+          type: string
+          nullable: true
+          description: Инвентарный номер (для типа BookTransaction)
+
+    LibraryReportResponse:
+      type: object
+      properties:
+        bookModels:
+          type: object
+          description: Информация о книге
+        count:
+          type: integer
+          description: Количество экземпляров
+
+    UserInfoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор пользователя из Keycloak
+        username:
+          type: string
+          description: Имя пользователя
+        firstName:
+          type: string
+          description: Имя
+        lastName:
+          type: string
+          description: Фамилия
+        email:
+          type: string
+          format: email
+          description: Email
+        roles:
+          type: string
+          description: Роли пользователя
+
+    # ============================================
+    # PAGINATION SCHEMAS
+    # ============================================
+
+    PageBookModel:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookModel'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+
+    PageBookCopyModel:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookCopyModel'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+
+    PageLibraryResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/LibraryResponse'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+
+    # ============================================
+    # ERROR SCHEMAS
+    # ============================================
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Тип ошибки
+        message:
+          type: string
+          description: Сообщение об ошибке
+        timestamp:
+          type: string
+          format: date-time
+          description: Время возникновения ошибки
+        path:
+          type: string
+          description: Путь запроса
+
+  responses:
+    BadRequestError:
+      description: Неверный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Bad Request"
+            message: "Invalid input parameters"
+            timestamp: "2025-12-11T10:00:00Z"
+            path: "/api/v1/library/books"
+
+    UnauthorizedError:
+      description: Не авторизован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Unauthorized"
+            message: "Authentication required"
+            timestamp: "2025-12-11T10:00:00Z"
+            path: "/api/v1/library/books"
+
+    ForbiddenError:
+      description: Доступ запрещен
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Forbidden"
+            message: "Insufficient permissions"
+            timestamp: "2025-12-11T10:00:00Z"
+            path: "/api/v1/library/books"
+
+    NotFoundError:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Not Found"
+            message: "Resource not found"
+            timestamp: "2025-12-11T10:00:00Z"
+            path: "/api/v1/library/books/1"
+
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Internal Server Error"
+            message: "An unexpected error occurred"
+            timestamp: "2025-12-11T10:00:00Z"
+            path: "/api/v1/library/books"
+

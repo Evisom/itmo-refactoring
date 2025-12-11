@@ -74,11 +74,9 @@ public class TransactionService {
         }
 
         transaction.setUserId(userId != null ? userId : "anonymous");
-        transaction.setEmail(email != null ? email : "anonymous@example.com");
-        transaction.setFirstName(firstName != null ? firstName : "Anonymous");
-        transaction.setLastName(lastName != null ? lastName : "User");
         transaction.setStatus(Status.PENDING);
         transaction.setCreationDate(LocalDateTime.now());
+        // createdAt и updatedAt устанавливаются автоматически через @PrePersist
         return BookTransactionModel.toModel(bookTransactionRepository.save(transaction));
     }
 
@@ -105,9 +103,26 @@ public class TransactionService {
             throw new RuntimeException();
         }
 
+        // Получаем email из JWT для отправки уведомления
+        String userEmail = null;
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() != null) {
+                if (auth.getPrincipal() instanceof Jwt) {
+                    Jwt jwt = (Jwt) auth.getPrincipal();
+                    userEmail = jwt.getClaimAsString("email");
+                } else if (auth.getPrincipal() instanceof CustomUserDetails) {
+                    CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+                    userEmail = userDetails.getEmail();
+                }
+            }
+        } catch (Exception e) {
+            // Игнорируем ошибки аутентификации
+        }
+        userEmail = userEmail != null ? userEmail : "anonymous@example.com";
         try {
             String json = objectMapper.writeValueAsString(new EmailRequest(
-                    transaction.getEmail(),
+                    userEmail,
                     "BooBook",
                     "Ваша бронь на книгу " + transaction.getBookCopy().getBook().getTitle() + " одобрена."
 
@@ -127,9 +142,27 @@ public class TransactionService {
         transaction.setStatus(Status.REJECTED);
         transaction.setComment(reason.getComment());
 
+        // Получаем email из JWT для отправки уведомления
+        String userEmail = null;
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() != null) {
+                if (auth.getPrincipal() instanceof Jwt) {
+                    Jwt jwt = (Jwt) auth.getPrincipal();
+                    userEmail = jwt.getClaimAsString("email");
+                } else if (auth.getPrincipal() instanceof CustomUserDetails) {
+                    CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+                    userEmail = userDetails.getEmail();
+                }
+            }
+        } catch (Exception e) {
+            // Игнорируем ошибки аутентификации
+        }
+        userEmail = userEmail != null ? userEmail : "anonymous@example.com";
+
         try {
             String json = objectMapper.writeValueAsString(new EmailRequest(
-                    transaction.getEmail(),
+                    userEmail,
                     "BooBook",
                     "Ваша бронь на книгу " + transaction.getBookCopy().getBook().getTitle() + " отклонена. Причина: " + transaction.getComment() + "."
 

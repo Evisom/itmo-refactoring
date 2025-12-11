@@ -24,7 +24,7 @@ public class Genre {
     @NotNull
     private String name;
 
-    @Column(name = "popularity")
+    @Column(name = "popularity", columnDefinition = "SMALLINT")
     @Min(1)
-    private Integer popularity;
+    private Short popularity;
 }

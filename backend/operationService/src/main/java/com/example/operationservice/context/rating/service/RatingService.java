@@ -60,12 +60,12 @@ public class RatingService {
         
         Rating newRating = new Rating();
 
-        newRating.setRatingValue(rating.getRatingValue());
+        newRating.setRatingValue(rating.getRatingValue().shortValue());
         newRating.setReview(rating.getReview());
         newRating.setUserId(userDetails != null ? userDetails.getId() : "anonymous");
-        newRating.setEmail(userDetails != null ? userDetails.getEmail() : "anonymous@example.com");
         newRating.setBook(bookRepository.findById(rating.getBookId()).orElseThrow());
         newRating.setTime(LocalDateTime.now());
+        // createdAt и updatedAt устанавливаются автоматически через @PrePersist
         return RatingModel.toModel(ratingRepository.save(newRating));
     }
 }

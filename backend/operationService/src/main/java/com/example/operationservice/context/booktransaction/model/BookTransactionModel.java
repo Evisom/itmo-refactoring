@@ -15,9 +15,7 @@ public class BookTransactionModel {
     private LocalDateTime returnDate;
     private LocalDateTime creationDate;
     private Boolean returned;
-    private String email;
-    private String firstName;
-    private String lastName;
+    // email, firstName, lastName удалены - данные получаются из Keycloak по userId
     private String status;
     private String comment;
 
@@ -29,9 +27,8 @@ public class BookTransactionModel {
         model.setBorrowDate(bookTransaction.getBorrowDate());
         model.setReturnDate(bookTransaction.getReturnDate());
         model.setReturned(bookTransaction.getReturned());
-        model.setEmail(bookTransaction.getEmail());
-        model.setFirstName(bookTransaction.getFirstName());
-        model.setLastName(bookTransaction.getLastName());
+        // Данные пользователя теперь получаются из Keycloak по userId
+        // email, firstName, lastName удалены из модели
         model.setStatus(bookTransaction.getStatus().toString());
         model.setCreationDate(bookTransaction.getCreationDate());
         model.setComment(bookTransaction.getComment());

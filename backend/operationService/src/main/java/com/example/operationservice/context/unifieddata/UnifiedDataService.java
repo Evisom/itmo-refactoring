@@ -65,8 +65,8 @@ public class UnifiedDataService {
                                 "Rating",
                                 rating.getTime(),
                                 rating.getUserId(),
-                                rating.getEmail(),
-                                rating.getRatingValue(),
+                                null, // email удален из модели - получается из Keycloak по userId
+                                rating.getRatingValue().intValue(),
                                 rating.getReview(),
                                 rating.getBook().getTitle(),
                                 rating.getBook().getAuthors().stream().map(AuthorModel::toModel).collect(Collectors.toList()), // FirstName для Rating отсутствует
@@ -76,7 +76,7 @@ public class UnifiedDataService {
                                 null,
                                 null
                         ))
-                        .toList()
+                        .collect(Collectors.toList())
         );
 
 
@@ -87,7 +87,7 @@ public class UnifiedDataService {
                                 "BookTransaction",
                                 transaction.getCreationDate(),
                                 transaction.getUserId(),
-                                transaction.getEmail(),
+                                null, // email удален из модели - получается из Keycloak по userId
                                 null,
                                 null,
                                 transaction.getBookCopy().getBook().getTitle(),
@@ -98,7 +98,7 @@ public class UnifiedDataService {
                                 transaction.getComment(),
                                 transaction.getBookCopy().getInventoryNumber()
                         ))
-                        .toList()
+                        .collect(Collectors.toList())
         );
         // Фильтруем по email (приоритет), если он указан, иначе по userId
         if (finalEmail != null && !finalEmail.isEmpty()) {
