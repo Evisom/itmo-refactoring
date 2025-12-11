@@ -21,18 +21,36 @@ public class Rating {
     private Long id;
 
 
+    @Column(name = "user_id", nullable = false)
     private String userId;
-    private String email;
 
     @ManyToOne
     @JoinColumn(name = "book_id", nullable = false)
     private Book book;
 
-    @Column(name = "rating_value", nullable = false)
-    private Integer ratingValue;
+    @Column(name = "rating_value", nullable = false, columnDefinition = "SMALLINT")
+    private Short ratingValue;
 
-    @Column(name = "review")
+    @Column(name = "review", columnDefinition = "TEXT")
     private String review;
 
+    @Column(nullable = false)
     private LocalDateTime time;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

@@ -23,7 +23,7 @@ public class BookTransaction {
     private BookCopy bookCopy;
 
 
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false)
     private String userId;
 
     @Column(name = "borrow_date")
@@ -35,14 +35,30 @@ public class BookTransaction {
     @Column(name = "returned", nullable = false)
     private Boolean returned = false;
 
-    private String email;
-    private String firstName;
-    private String lastName;
+    @Column(name = "creation_date", nullable = false)
     private LocalDateTime creationDate;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Status status;
 
     @Column(columnDefinition = "TEXT")
     private String comment;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

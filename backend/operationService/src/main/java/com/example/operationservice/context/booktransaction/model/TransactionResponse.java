@@ -23,9 +23,11 @@ public class TransactionResponse {
 
     public static TransactionResponse fromBookTransToResponse(BookTransaction transaction) {
         TransactionResponse res = new TransactionResponse();
-        res.setFirstName(transaction.getFirstName());
-        res.setLastName(transaction.getLastName());
-        res.setEmail(transaction.getEmail());
+        // Данные пользователя теперь получаются из Keycloak по userId
+        // Для отображения можно получить из JWT или оставить пустыми
+        res.setFirstName(null); // Получать из Keycloak при необходимости
+        res.setLastName(null); // Получать из Keycloak при необходимости
+        res.setEmail(null); // Получать из Keycloak при необходимости
         res.setId(transaction.getId());
         res.setInventoryId(transaction.getBookCopy().getInventoryNumber());
         res.setAuthor(transaction.getBookCopy().getBook().getAuthors().stream().map(AuthorModel::toModel).collect(Collectors.toList()));

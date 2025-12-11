@@ -19,7 +19,7 @@ public class RatingModel {
 
     private Long id;
     private String userId;
-    private String email;
+    // email удален - данные получаются из Keycloak по userId
     private BookModel book;
     private Integer ratingValue;
     private String review;
@@ -46,10 +46,10 @@ public class RatingModel {
         
         RatingModel model = new RatingModel();
         model.setId(rating.getId());
-        model.setEmail(rating.getEmail());
+        // email удален из модели - данные получаются из Keycloak по userId
         model.setUserId(userDetails != null ? userDetails.getId() : rating.getUserId());
         model.setBook(BookModel.toModel(rating.getBook()));
-        model.setRatingValue(rating.getRatingValue());
+        model.setRatingValue(rating.getRatingValue().intValue());
         model.setReview(rating.getReview());
         model.setTime(rating.getTime());
         return model;
