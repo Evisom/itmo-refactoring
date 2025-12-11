@@ -1,32 +1,26 @@
 "use client";
 
 import React, { useState } from "react";
-
-import useSWR from "swr";
 import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
-import { useAuth } from "@/features/auth/hooks/useAuth";
-
-import fetcher from "@/shared/services/api-client";
-import { config } from "@/shared/utils/config";
-
-import "./page.scss";
+import { usePublishers } from "@/features/books/hooks/usePublishers";
+import { useCreatePublisher } from "@/features/books/hooks/useCreatePublisher";
+import { useDeletePublisher } from "@/features/books/hooks/useDeletePublisher";
 import { useErrorAlert } from "@/shared/utils/useErrorAlert";
 
+import "./page.scss";
+
 export const Publishers = () => {
-  const { token } = useAuth();
+  const { error, showError } = useErrorAlert();
+  const { publishers, isLoading } = usePublishers();
+  const { createPublisher, isLoading: creating } = useCreatePublisher();
+  const { deletePublisher, isLoading: deleting } = useDeletePublisher();
   const [formState, setFormState] = useState({
     name: "",
     website: "",
     email: "",
   });
-
-  const { error, showError } = useErrorAlert();
-  const { data, mutate } = useSWR(
-    token ? [`${config.API_URL}/library/publishers`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
 
   const handleInputChange =
     (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,36 +37,22 @@ export const Publishers = () => {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch(`${config.API_URL}/library/publishers`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formState),
+      await createPublisher({
+        name: formState.name.trim(),
+        website: formState.website.trim() || undefined,
+        email: formState.email.trim() || undefined,
       });
-      if (!response.ok) throw new Error("Ошибка при создании издателя");
-      mutate();
+      setFormState({ name: "", website: "", email: "" });
     } catch (err) {
-      showError((err as Error).message);
+      showError((err as Error).message || "Ошибка при создании издателя");
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(
-        `${config.API_URL}/library/publishers/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!response.ok) throw new Error("Ошибка при удалении издателя");
-      mutate();
+      await deletePublisher(id);
     } catch (err) {
-      showError((err as Error).message);
+      showError((err as Error).message || "Ошибка при удалении издателя");
     }
   };
 
@@ -89,7 +69,8 @@ export const Publishers = () => {
         <Button
           variant="outlined"
           color="error"
-          onClick={() => handleDelete(params.row.id)}
+            onClick={() => handleDelete(params.row.id)}
+            disabled={deleting}
         >
           Удалить
         </Button>
@@ -97,7 +78,7 @@ export const Publishers = () => {
     },
   ];
 
-  if (!data) return <LoadingSpinner fullScreen />;
+  if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
     <>
@@ -124,7 +105,7 @@ export const Publishers = () => {
 
             <Button
               variant="outlined"
-              disabled={!isValidForm()}
+              disabled={!isValidForm() || creating}
               onClick={handleSubmit}
             >
               Создать
@@ -139,7 +120,7 @@ export const Publishers = () => {
 
       <div className="results">
         <DataGrid
-          rows={data}
+          rows={publishers || []}
           columns={columns}
           hideFooterPagination
           hideFooterSelectedRowCount

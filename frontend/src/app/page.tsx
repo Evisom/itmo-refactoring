@@ -19,28 +19,28 @@ import {
   Link,
   Pagination,
 } from "@mui/material";
-import useSWR from "swr";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
-import { config } from "@/shared/utils/config";
-import fetcher from "@/shared/services/api-client";
+import { useBooks } from "@/features/books/hooks/useBooks";
+import { useAuthors } from "@/features/books/hooks/useAuthors";
+import { useGenres } from "@/features/books/hooks/useGenres";
+import { useThemes } from "@/features/books/hooks/useThemes";
+import { usePublishers } from "@/features/books/hooks/usePublishers";
 import "./page.scss";
 import BookCover from "@/features/books/components/BookCover";
 
 export default function Home() {
   const { loading } = useRequireAuth();
-  const { token } = useAuth();
 
   const [filterState, setFilterState] = useState({
     name: "",
-    genres: [],
-    themes: [],
-    publishers: [],
-    authors: [],
+    genres: [] as string[],
+    themes: [] as string[],
+    publishers: [] as string[],
+    authors: [] as string[],
     minCopies: 0,
     maxCopies: 100,
-    rating: [1, 5],
+    rating: [1, 5] as number[],
     popularity: "asc",
     available: true,
   });
@@ -50,70 +50,35 @@ export default function Home() {
     size: 6,
   });
 
-  const { data: publishersData } = useSWR(
-    [token ? `${config.API_URL}/library/publishers` : null, token],
-    ([url, token]) => fetcher(url, token)
-  );
-  const { data: themesData } = useSWR(
-    [token ? `${config.API_URL}/library/themes` : null, token],
-    ([url, token]) => fetcher(url, token)
-  );
-  const { data: authorsData } = useSWR(
-    [token ? `${config.API_URL}/library/authors` : null, token],
-    ([url, token]) => fetcher(url, token)
-  );
-  const { data: genresData } = useSWR(
-    [token ? `${config.API_URL}/library/genres` : null, token],
-    ([url, token]) => fetcher(url, token)
-  );
+  const { publishers: publishersData } = usePublishers();
+  const { themes: themesData } = useThemes();
+  const { authors: authorsData } = useAuthors();
+  const { genres: genresData } = useGenres();
 
-  const handlePageChange = (event, value) => {
+  const handlePageChange = (_event: unknown, value: number) => {
     setPagination((prev) => ({ ...prev, page: value - 1 }));
   };
 
-  const createQueryString = () => {
-    const params = new URLSearchParams();
+  const {
+    books: booksList,
+    totalElements,
+    isValidating,
+    mutate,
+  } = useBooks({
+    page: pagination.page,
+    size: pagination.size,
+    name: filterState.name || undefined,
+    genres: filterState.genres.length > 0 ? filterState.genres : undefined,
+    themes: filterState.themes.length > 0 ? filterState.themes : undefined,
+    publishers: filterState.publishers.length > 0 ? filterState.publishers : undefined,
+    authors: filterState.authors.length > 0 ? filterState.authors : undefined,
+    minCopies: filterState.minCopies > 0 ? filterState.minCopies : undefined,
+    maxCopies: filterState.maxCopies < 100 ? filterState.maxCopies : undefined,
+    rating: filterState.rating[0] !== 1 || filterState.rating[1] !== 5 ? filterState.rating : undefined,
+    available: filterState.available,
+  });
 
-    if (filterState.name) params.append("name", filterState.name);
-    // if (filterState.popularity)
-    //   params.append("popularity", filterState.popularity);
-    // if (filterState.available !== undefined)
-    //   params.append("available", filterState.available.toString());
-    if (filterState.minCopies)
-      params.append("minCopies", filterState.minCopies.toString());
-    if (filterState.maxCopies)
-      params.append("maxCopies", filterState.maxCopies.toString());
-    if (filterState.rating[0])
-      params.append(
-        "ratingMIN",
-        (filterState.rating[0] === 1 ? "0" : filterState.rating[0]).toString()
-      );
-    if (filterState.rating[1])
-      params.append("ratingMAX", filterState.rating[1].toString());
-
-    filterState.genres.forEach((genre) => params.append("genres", genre));
-    filterState.themes.forEach((theme) => params.append("themes", theme));
-    filterState.publishers.forEach((publisher) =>
-      params.append("publishers", publisher)
-    );
-    filterState.authors.forEach((author) => params.append("authors", author));
-
-    params.append("page", pagination.page.toString());
-    params.append("size", pagination.size.toString());
-
-    return params.toString();
-  };
-
-  const { data: booksData, isValidating } = useSWR(
-    [
-      token ? `${config.API_URL}/library/find?${createQueryString()}` : null,
-      token,
-    ],
-    ([url, token]) => fetcher(url, token),
-    { revalidateOnFocus: false }
-  );
-
-  const handleFilterChange = (field, value) => {
+  const handleFilterChange = (field: string, value: unknown) => {
     setFilterState((prevState) => ({
       ...prevState,
       [field]: value,
@@ -121,8 +86,7 @@ export default function Home() {
   };
 
   const handleSearch = () => {
-    // Trigger SWR revalidation
-    mutate([`${config.API_URL}/library/find?${createQueryString()}`, token]);
+    mutate();
   };
 
   if (loading) {
@@ -293,10 +257,10 @@ export default function Home() {
               <LoadingSpinner fullScreen />
             ) : (
               <>
-                {booksData?.content?.length ? (
+                {booksList?.length ? (
                   <>
                     <Grid container spacing={2}>
-                      {booksData?.content?.map((book) => (
+                      {booksList?.map((book) => (
                         <Grid item xs={12} sm={6} md={4} key={book.id}>
                           <Card sx={{ height: "404px" }}>
                             <Link
@@ -361,7 +325,7 @@ export default function Home() {
                     >
                       <Pagination
                         count={Math.ceil(
-                          (booksData?.totalElements || 1) / pagination.size
+                          (totalElements || 1) / pagination.size
                         )}
                         page={pagination.page + 1}
                         onChange={handlePageChange}

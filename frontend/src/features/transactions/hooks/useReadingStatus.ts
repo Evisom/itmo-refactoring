@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { transactionsApi, ReadingStatusResponse } from "@/features/transactions/services/transactions-api";
+import transactionsApi from "@/features/transactions/services/transactions-api";
+import type { ReadingStatusResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const useReadingStatus = (bookId: number | null) => {

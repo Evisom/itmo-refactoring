@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { ratingsApi, RatingResponse } from "@/features/ratings/services/ratings-api";
+import ratingsApi from "@/features/ratings/services/ratings-api";
+import type { RatingResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 interface UseRatingsParams {

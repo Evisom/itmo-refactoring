@@ -2,26 +2,22 @@
 
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import transactionsApi from "@/features/transactions/services/transactions-api";
+import bookCopiesApi from "../services/book-copies-api";
+import type { BookCopyCreateRequest, BookCopyResponse } from "@/shared/types/api";
 import { mutate } from "swr";
 
-export const useCancelTransaction = () => {
+export const useCreateBookCopy = () => {
   const { token } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  const cancelTransaction = async (id: number): Promise<void> => {
-    if (!token) {
-      throw new Error("No token provided");
-    }
-
+  const createBookCopy = async (data: BookCopyCreateRequest): Promise<BookCopyResponse | null> => {
     setIsLoading(true);
     setError(null);
-
     try {
-      await transactionsApi.cancelTransaction(token, id);
-      await mutate(["transactions", undefined, token]);
-      await mutate(["transaction", id, token]);
+      const result = await bookCopiesApi.createBookCopy(token, data);
+      mutate([`${token ? "book-copies" : null}`, token]);
+      return result;
     } catch (err) {
       setError(err);
       throw err;
@@ -31,10 +27,10 @@ export const useCancelTransaction = () => {
   };
 
   return {
-    cancelTransaction,
+    createBookCopy,
     isLoading,
     error,
   };
 };
 
-export default useCancelTransaction;
+export default useCreateBookCopy;

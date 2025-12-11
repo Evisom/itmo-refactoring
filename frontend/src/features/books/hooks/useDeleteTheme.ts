@@ -2,26 +2,20 @@
 
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import transactionsApi from "@/features/transactions/services/transactions-api";
+import themesApi from "../services/themes-api";
 import { mutate } from "swr";
 
-export const useCancelTransaction = () => {
+export const useDeleteTheme = () => {
   const { token } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  const cancelTransaction = async (id: number): Promise<void> => {
-    if (!token) {
-      throw new Error("No token provided");
-    }
-
+  const deleteTheme = async (id: number): Promise<void> => {
     setIsLoading(true);
     setError(null);
-
     try {
-      await transactionsApi.cancelTransaction(token, id);
-      await mutate(["transactions", undefined, token]);
-      await mutate(["transaction", id, token]);
+      await themesApi.deleteTheme(token, id);
+      mutate([`${token ? "themes" : null}`, token]);
     } catch (err) {
       setError(err);
       throw err;
@@ -31,10 +25,10 @@ export const useCancelTransaction = () => {
   };
 
   return {
-    cancelTransaction,
+    deleteTheme,
     isLoading,
     error,
   };
 };
 
-export default useCancelTransaction;
+export default useDeleteTheme;

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { transactionsApi, TransactionDeclineRequest, TransactionResponse } from "@/features/transactions/services/transactions-api";
+import transactionsApi from "@/features/transactions/services/transactions-api";
+import type { TransactionDeclineRequest, TransactionResponse } from "@/shared/types/api";
 import { mutate } from "swr";
 
 export const useDeclineTransaction = () => {

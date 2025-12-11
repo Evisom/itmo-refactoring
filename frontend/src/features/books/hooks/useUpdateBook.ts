@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { booksApi, BookUpdateRequest, BookResponse } from "@/features/books/services/books-api";
+import booksApi from "@/features/books/services/books-api";
+import type { BookUpdateRequest, BookResponse } from "@/shared/types/api";
 import { mutate } from "swr";
 
 export const useUpdateBook = () => {

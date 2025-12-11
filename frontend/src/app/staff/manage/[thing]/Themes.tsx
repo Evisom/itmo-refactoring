@@ -1,32 +1,26 @@
 "use client";
 
 import React, { useState } from "react";
-
-import useSWR from "swr";
 import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
-import { useAuth } from "@/features/auth/hooks/useAuth";
-
-import fetcher from "@/shared/services/api-client";
-import { config } from "@/shared/utils/config";
-
-import "./page.scss";
+import { useThemes } from "@/features/books/hooks/useThemes";
+import { useCreateTheme } from "@/features/books/hooks/useCreateTheme";
+import { useDeleteTheme } from "@/features/books/hooks/useDeleteTheme";
 import { useErrorAlert } from "@/shared/utils/useErrorAlert";
 
+import "./page.scss";
+
 export const Themes = () => {
-  const { token } = useAuth();
   const { error, showError } = useErrorAlert();
+  const { themes, isLoading } = useThemes();
+  const { createTheme, isLoading: creating } = useCreateTheme();
+  const { deleteTheme, isLoading: deleting } = useDeleteTheme();
   const [formState, setFormState] = useState({
     name: "",
     popularity: "",
   });
-
-  const { data, mutate } = useSWR(
-    token ? [`${config.API_URL}/library/themes`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
 
   const handleInputChange =
     (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,36 +35,21 @@ export const Themes = () => {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch(`${config.API_URL}/library/themes`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formState.name,
-          popularity: parseInt(formState.popularity, 10),
-        }),
+      await createTheme({
+        name: formState.name.trim(),
+        popularity: formState.popularity ? parseInt(formState.popularity, 10) : undefined,
       });
-      if (!response.ok) throw new Error("Ошибка при создании темы");
-      mutate();
+      setFormState({ name: "", popularity: "" });
     } catch (err) {
-      showError((err as Error).message);
+      showError((err as Error).message || "Ошибка при создании темы");
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`${config.API_URL}/library/themes/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Ошибка при удалении темы");
-      mutate();
+      await deleteTheme(id);
     } catch (err) {
-      showError((err as Error).message);
+      showError((err as Error).message || "Ошибка при удалении темы");
     }
   };
 
@@ -88,6 +67,7 @@ export const Themes = () => {
             variant="outlined"
             color="error"
             onClick={() => handleDelete(params.row.id)}
+            disabled={deleting}
           >
             Удалить
           </Button>
@@ -96,7 +76,7 @@ export const Themes = () => {
     },
   ];
 
-  if (!data) return <LoadingSpinner fullScreen />;
+  if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
     <>
@@ -119,7 +99,7 @@ export const Themes = () => {
 
             <Button
               variant="outlined"
-              disabled={!isValidForm()}
+              disabled={!isValidForm() || creating}
               onClick={handleSubmit}
             >
               Создать
@@ -134,7 +114,7 @@ export const Themes = () => {
 
       <div className="results">
         <DataGrid
-          rows={data}
+          rows={themes || []}
           columns={columns}
           hideFooterPagination
           hideFooterSelectedRowCount

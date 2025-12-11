@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { authorsApi, AuthorResponse } from "@/features/books/services/authors-api";
+import authorsApi from "@/features/books/services/authors-api";
+import type { AuthorResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const useAuthors = () => {

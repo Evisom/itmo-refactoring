@@ -1,25 +1,9 @@
 import fetcher from "@/shared/services/api-client";
 import { config } from "@/shared/utils/config";
-
-export interface RatingResponse {
-  id: number;
-  userId: string;
-  bookId: number;
-  rating: number;
-  comment?: string;
-  createdAt: string;
-  user?: {
-    id: string;
-    username: string;
-    email: string;
-  };
-}
-
-export interface RatingCreateRequest {
-  bookId: number;
-  rating: number;
-  comment?: string;
-}
+import type {
+  RatingResponse,
+  RatingCreateRequest,
+} from "@/shared/types/api";
 
 const ratingsApi = {
   getRatings: async (

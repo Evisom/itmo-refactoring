@@ -1,32 +1,26 @@
 "use client";
 
 import React, { useState } from "react";
-
-import useSWR from "swr";
 import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
-import { useAuth } from "@/features/auth/hooks/useAuth";
-
-import fetcher from "@/shared/services/api-client";
-import { config } from "@/shared/utils/config";
-
-import "./page.scss";
+import { useGenres } from "@/features/books/hooks/useGenres";
+import { useCreateGenre } from "@/features/books/hooks/useCreateGenre";
+import { useDeleteGenre } from "@/features/books/hooks/useDeleteGenre";
 import { useErrorAlert } from "@/shared/utils/useErrorAlert";
 
+import "./page.scss";
+
 export const Genres = () => {
-  const { token } = useAuth();
   const { error, showError } = useErrorAlert();
+  const { genres, isLoading } = useGenres();
+  const { createGenre, isLoading: creating } = useCreateGenre();
+  const { deleteGenre, isLoading: deleting } = useDeleteGenre();
   const [formState, setFormState] = useState({
     name: "",
     popularity: "",
   });
-
-  const { data, mutate } = useSWR(
-    token ? [`${config.API_URL}/library/genres`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
 
   const handleInputChange =
     (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,36 +35,21 @@ export const Genres = () => {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch(`${config.API_URL}/library/genres`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formState.name,
-          popularity: parseInt(formState.popularity, 10),
-        }),
+      await createGenre({
+        name: formState.name.trim(),
+        popularity: formState.popularity ? parseInt(formState.popularity, 10) : undefined,
       });
-      if (!response.ok) throw new Error("Ошибка при создании жанра");
-      mutate();
+      setFormState({ name: "", popularity: "" });
     } catch (err) {
-      showError((err as Error).message);
+      showError((err as Error).message || "Ошибка при создании жанра");
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`${config.API_URL}/library/genres/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Ошибка при удалении жанра");
-      mutate();
+      await deleteGenre(id);
     } catch (err) {
-      showError((err as Error).message);
+      showError((err as Error).message || "Ошибка при удалении жанра");
     }
   };
 
@@ -96,7 +75,7 @@ export const Genres = () => {
     },
   ];
 
-  if (!data) return <LoadingSpinner fullScreen />;
+  if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
     <>
@@ -119,7 +98,7 @@ export const Genres = () => {
 
             <Button
               variant="outlined"
-              disabled={!isValidForm()}
+              disabled={!isValidForm() || creating}
               onClick={handleSubmit}
             >
               Создать
@@ -134,7 +113,7 @@ export const Genres = () => {
 
       <div className="results">
         <DataGrid
-          rows={data}
+          rows={genres || []}
           columns={columns}
           hideFooterPagination
           hideFooterSelectedRowCount

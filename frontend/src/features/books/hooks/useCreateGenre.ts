@@ -2,26 +2,22 @@
 
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import transactionsApi from "@/features/transactions/services/transactions-api";
+import genresApi from "../services/genres-api";
+import type { GenreCreateRequest, GenreResponse } from "@/shared/types/api";
 import { mutate } from "swr";
 
-export const useCancelTransaction = () => {
+export const useCreateGenre = () => {
   const { token } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  const cancelTransaction = async (id: number): Promise<void> => {
-    if (!token) {
-      throw new Error("No token provided");
-    }
-
+  const createGenre = async (data: GenreCreateRequest): Promise<GenreResponse | null> => {
     setIsLoading(true);
     setError(null);
-
     try {
-      await transactionsApi.cancelTransaction(token, id);
-      await mutate(["transactions", undefined, token]);
-      await mutate(["transaction", id, token]);
+      const result = await genresApi.createGenre(token, data);
+      mutate([`${token ? "genres" : null}`, token]);
+      return result;
     } catch (err) {
       setError(err);
       throw err;
@@ -31,10 +27,10 @@ export const useCancelTransaction = () => {
   };
 
   return {
-    cancelTransaction,
+    createGenre,
     isLoading,
     error,
   };
 };
 
-export default useCancelTransaction;
+export default useCreateGenre;

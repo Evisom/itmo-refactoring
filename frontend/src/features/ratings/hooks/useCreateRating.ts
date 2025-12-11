@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { ratingsApi, RatingCreateRequest, RatingResponse } from "@/features/ratings/services/ratings-api";
+import ratingsApi from "@/features/ratings/services/ratings-api";
+import type { RatingCreateRequest, RatingResponse } from "@/shared/types/api";
 import { mutate } from "swr";
 
 export const useCreateRating = () => {

@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { booksApi, BookListResponse } from "@/features/books/services/books-api";
+import booksApi from "@/features/books/services/books-api";
+import type { BookListResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 interface UseBooksParams {

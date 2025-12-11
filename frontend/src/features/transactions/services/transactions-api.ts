@@ -1,45 +1,11 @@
 import fetcher from "@/shared/services/api-client";
 import { config } from "@/shared/utils/config";
-
-export interface TransactionResponse {
-  id: number;
-  userId: string;
-  bookCopyId: number;
-  status: "PENDING" | "APPROVED" | "DECLINED" | "RETURNED" | "CANCELLED";
-  createdAt: string;
-  updatedAt?: string;
-  bookCopy?: {
-    id: number;
-    bookId: number;
-    libraryId: number;
-    inventoryNumber: string;
-    available: boolean;
-    book?: {
-      id: number;
-      title: string;
-      authors?: Array<{ id: number; name: string; surname: string }>;
-    };
-    library?: {
-      id: number;
-      name: string;
-    };
-  };
-}
-
-export interface TransactionCreateRequest {
-  bookId: number;
-  libraryId: number;
-}
-
-export interface TransactionDeclineRequest {
-  comment: string;
-}
-
-export interface ReadingStatusResponse {
-  bookId: number;
-  status: "NOT_STARTED" | "READING" | "FINISHED";
-  transactionId?: number;
-}
+import type {
+  TransactionResponse,
+  TransactionCreateRequest,
+  TransactionDeclineRequest,
+  ReadingStatusResponse,
+} from "@/shared/types/api";
 
 const transactionsApi = {
   getTransactions: async (
@@ -142,7 +108,7 @@ const transactionsApi = {
     return response.json();
   },
 
-  returnTransaction: async (token: string | null): Promise<TransactionResponse> => {
+  returnTransaction: async (token: string | null, invNumber?: string): Promise<TransactionResponse> => {
     if (!token) throw new Error("No token provided");
     const response = await fetch(`${config.OPERATION_API_V2_URL}/transactions/return`, {
       method: "POST",
@@ -150,6 +116,7 @@ const transactionsApi = {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
+      body: invNumber ? JSON.stringify({ invNumber }) : undefined,
     });
 
     if (!response.ok) {

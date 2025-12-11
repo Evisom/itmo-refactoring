@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import useSWR, { mutate } from "swr";
 import {
   Typography,
   Card,
@@ -19,38 +18,27 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import fetcher from "@/shared/services/api-client";
-import { config } from "@/shared/utils/config";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import BookCover from "@/features/books/components/BookCover";
+import { useBook } from "@/features/books/hooks/useBook";
+import { useRatings } from "@/features/ratings/hooks/useRatings";
+import { useCreateRating } from "@/features/ratings/hooks/useCreateRating";
+import { useLibraries } from "@/features/books/hooks/useLibraries";
+import { useReadingStatus } from "@/features/transactions/hooks/useReadingStatus";
+import { useCreateTransaction } from "@/features/transactions/hooks/useCreateTransaction";
 
 const BookPage = ({ params }: { params: { id: string } }) => {
   const { id } = React.use(params);
-  const { token, roles } = useAuth();
+  const bookId = Number(id);
+  const { roles } = useAuth();
 
-  const { data: bookData, error: bookError } = useSWR(
-    [token ? `${config.API_URL}/library/books/${id}` : null, token],
-    ([url, token]) => fetcher(url, token)
-  );
-
-  const { data: reviewsData, error: reviewsError } = useSWR(
-    [token ? `${config.OPERATION_API_URL}/operations/reviews/${id}` : null, token],
-    ([url, token]) => fetcher(url, token)
-  );
-
-  const { data: librariesData, error: librariesError } = useSWR(
-    [token ? `${config.API_URL}/library/allLibraries` : null, token],
-    ([url, token]) => fetcher(url, token)
-  );
-
-  const { data: readingStatus } = useSWR(
-    [
-      token ? `${config.OPERATION_API_URL}/operations/readingStatus?bookId=${id}` : null,
-      token,
-    ],
-    ([url, token]) => fetcher(url, token)
-  );
+  const { book: bookData, isLoading: bookLoading, error: bookError } = useBook(bookId);
+  const { ratings: reviewsData, isLoading: reviewsLoading, error: reviewsError } = useRatings({ bookId });
+  const { libraries: librariesData, isLoading: librariesLoading, error: librariesError } = useLibraries();
+  const { readingStatus, isLoading: readingStatusLoading } = useReadingStatus(bookId);
+  const { createTransaction, isLoading: creatingTransaction } = useCreateTransaction();
+  const { createRating, isLoading: creatingRating } = useCreateRating();
 
   const [newReview, setNewReview] = useState({
     ratingValue: 0,
@@ -71,26 +59,12 @@ const BookPage = ({ params }: { params: { id: string } }) => {
   const handleReserve = async (libraryId: number) => {
     setReserving(libraryId);
     try {
-      const status = await fetch(
-        `${config.OPERATION_API_URL}/operations/books/${id}/reserve`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ libraryId }),
-        }
-      );
-      if (status.status === 200) {
-        setSnackbar({
-          open: true,
-          message: "Книга успешно забронирована",
-          severity: "success",
-        });
-      } else {
-        throw new Error("Ошибка при бронировании");
-      }
+      await createTransaction({ bookId, libraryId });
+      setSnackbar({
+        open: true,
+        message: "Книга успешно забронирована",
+        severity: "success",
+      });
     } catch (error) {
       console.error("Ошибка при бронировании:", error);
       setSnackbar({
@@ -120,31 +94,39 @@ const BookPage = ({ params }: { params: { id: string } }) => {
 
   const groupedData = Object.values(groupedCopies || {});
 
-  const handleReviewChange = (field, value) => {
+  const handleReviewChange = (field: string, value: unknown) => {
     setNewReview((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleReviewSubmit = async () => {
-    await fetch(`${config.OPERATION_API_URL}/operations/reviews`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        bookId: Number(id),
-        ...newReview,
-      }),
-    });
-    mutate([`${config.OPERATION_API_URL}/operations/reviews/${id}`, token]);
-    setNewReview({ ratingValue: 0, review: "" });
+    try {
+      await createRating({
+        bookId: bookId,
+        rating: newReview.ratingValue,
+        comment: newReview.review || undefined,
+      });
+      setNewReview({ ratingValue: 0, review: "" });
+    } catch (error) {
+      console.error("Ошибка при отправке отзыва:", error);
+      setSnackbar({
+        open: true,
+        message: "Не удалось отправить отзыв",
+        severity: "error",
+      });
+    }
   };
 
-  if (!bookData || !reviewsData || !librariesData) return <LoadingSpinner fullScreen />;
-  if (bookError || reviewsError || librariesError)
+  if (bookLoading || reviewsLoading || librariesLoading || readingStatusLoading) {
+    return <LoadingSpinner fullScreen />;
+  }
+  if (bookError || reviewsError || librariesError) {
     return <Typography color="error">Ошибка загрузки данных</Typography>;
+  }
+  if (!bookData || !reviewsData || !librariesData) {
+    return <LoadingSpinner fullScreen />;
+  }
 
-  const getLibraryName = (libraryId) => {
+  const getLibraryName = (libraryId: number) => {
     const library = librariesData.find((lib) => lib.id === libraryId);
     return library ? library.name : "Неизвестная библиотека";
   };
@@ -228,9 +210,9 @@ const BookPage = ({ params }: { params: { id: string } }) => {
                       variant="contained"
                       color="primary"
                       onClick={() => handleReserve(group.libraryId)}
-                      disabled={reserving === group.libraryId}
+                      disabled={reserving === group.libraryId || creatingTransaction}
                     >
-                      {reserving === group.libraryId
+                      {reserving === group.libraryId || creatingTransaction
                         ? "Бронирование..."
                         : "Забронировать"}
                     </Button>
@@ -249,7 +231,7 @@ const BookPage = ({ params }: { params: { id: string } }) => {
       </TableContainer>
 
       {/* Add Review */}
-      {readingStatus?.includes("RETURNED") && (
+      {readingStatus?.status === "FINISHED" && (
         <>
           <Typography
             variant="h5"
@@ -282,7 +264,7 @@ const BookPage = ({ params }: { params: { id: string } }) => {
                 color="primary"
                 style={{ marginTop: "10px" }}
                 onClick={handleReviewSubmit}
-                disabled={!newReview.ratingValue || !newReview.review.trim()}
+                disabled={!newReview.ratingValue || !newReview.review.trim() || creatingRating}
               >
                 Отправить
               </Button>
@@ -292,24 +274,29 @@ const BookPage = ({ params }: { params: { id: string } }) => {
       )}
 
       {/* Reviews */}
-      {readingStatus?.includes("RETURNED")}
       <Typography variant="h5" style={{ marginTop: "20px" }}>
         Отзывы
       </Typography>
-      {reviewsData.map((review) => (
-        <Card
-          key={review.id}
-          style={{ marginBottom: "16px", marginTop: "16px" }}
-        >
-          <CardContent>
-            <Rating value={review.ratingValue} readOnly />
-            <Typography>{review.review || "Без текста"}</Typography>
-            <Typography variant="body2" color="textSecondary">
-              {new Date(review.time).toLocaleString() || "Неизвестное время"}
-            </Typography>
-          </CardContent>
-        </Card>
-      ))}
+      {reviewsData && reviewsData.length > 0 ? (
+        reviewsData.map((review) => (
+          <Card
+            key={review.id}
+            style={{ marginBottom: "16px", marginTop: "16px" }}
+          >
+            <CardContent>
+              <Rating value={review.rating} readOnly />
+              <Typography>{review.comment || "Без текста"}</Typography>
+              <Typography variant="body2" color="textSecondary">
+                {new Date(review.createdAt).toLocaleString() || "Неизвестное время"}
+              </Typography>
+            </CardContent>
+          </Card>
+        ))
+      ) : (
+        <Typography variant="body2" color="textSecondary">
+          Пока нет отзывов
+        </Typography>
+      )}
 
       <Snackbar
         open={snackbar.open}

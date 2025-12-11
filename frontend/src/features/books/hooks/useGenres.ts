@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { genresApi, GenreResponse } from "@/features/books/services/genres-api";
+import genresApi from "@/features/books/services/genres-api";
+import type { GenreResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const useGenres = () => {

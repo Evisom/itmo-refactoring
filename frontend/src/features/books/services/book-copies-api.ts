@@ -1,37 +1,35 @@
 import fetcher from "@/shared/services/api-client";
 import { config } from "@/shared/utils/config";
 import type {
-  LibraryResponse,
-  LibraryCreateRequest,
-  LibraryUpdateRequest,
-  LibraryCopiesResponse,
+  BookCopyResponse,
+  BookCopyListResponse,
+  BookCopyCreateRequest,
+  BookCopyUpdateRequest,
 } from "@/shared/types/api";
 
-
-const librariesApi = {
-  getLibraries: async (token: string | null): Promise<LibraryResponse[]> => {
-    if (!token) throw new Error("No token provided");
-    return fetcher(`${config.API_V2_URL}/libraries`, token);
-  },
-
-  getLibraryCopies: async (
+const bookCopiesApi = {
+  getBookCopies: async (
     token: string | null,
-    libraryId: number,
     params?: { page?: number; size?: number }
-  ): Promise<LibraryCopiesResponse> => {
+  ): Promise<BookCopyListResponse> => {
     if (!token) throw new Error("No token provided");
     const searchParams = new URLSearchParams();
     if (params?.page !== undefined) searchParams.append("page", params.page.toString());
     if (params?.size !== undefined) searchParams.append("size", params.size.toString());
 
     const queryString = searchParams.toString();
-    const url = `${config.API_V2_URL}/libraries/${libraryId}/copies${queryString ? `?${queryString}` : ""}`;
+    const url = `${config.API_V2_URL}/book-copies${queryString ? `?${queryString}` : ""}`;
     return fetcher(url, token);
   },
 
-  createLibrary: async (token: string | null, data: LibraryCreateRequest): Promise<LibraryResponse> => {
+  getBookCopy: async (token: string | null, id: number): Promise<BookCopyResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.API_V2_URL}/libraries`, {
+    return fetcher(`${config.API_V2_URL}/book-copies/${id}`, token);
+  },
+
+  createBookCopy: async (token: string | null, data: BookCopyCreateRequest): Promise<BookCopyResponse> => {
+    if (!token) throw new Error("No token provided");
+    const response = await fetch(`${config.API_V2_URL}/book-copies`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -51,9 +49,9 @@ const librariesApi = {
     return response.json();
   },
 
-  updateLibrary: async (token: string | null, id: number, data: LibraryUpdateRequest): Promise<LibraryResponse> => {
+  updateBookCopy: async (token: string | null, id: number, data: BookCopyUpdateRequest): Promise<BookCopyResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.API_V2_URL}/libraries/${id}`, {
+    const response = await fetch(`${config.API_V2_URL}/book-copies/${id}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -73,9 +71,9 @@ const librariesApi = {
     return response.json();
   },
 
-  deleteLibrary: async (token: string | null, id: number): Promise<void> => {
+  deleteBookCopy: async (token: string | null, id: number): Promise<void> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.API_V2_URL}/libraries/${id}`, {
+    const response = await fetch(`${config.API_V2_URL}/book-copies/${id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -92,4 +90,4 @@ const librariesApi = {
   },
 };
 
-export default librariesApi;
+export default bookCopiesApi;

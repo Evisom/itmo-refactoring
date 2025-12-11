@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { booksApi, BookResponse } from "@/features/books/services/books-api";
+import booksApi from "@/features/books/services/books-api";
+import type { BookResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const useBook = (id: number | null) => {

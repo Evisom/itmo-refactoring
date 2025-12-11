@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { publishersApi, PublisherResponse } from "@/features/books/services/publishers-api";
+import publishersApi from "@/features/books/services/publishers-api";
+import type { PublisherResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const usePublishers = () => {

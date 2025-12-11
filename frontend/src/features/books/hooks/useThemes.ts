@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { themesApi, ThemeResponse } from "@/features/books/services/themes-api";
+import themesApi from "@/features/books/services/themes-api";
+import type { ThemeResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const useThemes = () => {

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import useSWR, { mutate } from "swr";
 import {
   Typography,
   Card,
@@ -18,21 +17,18 @@ import {
   TextField,
   Box,
 } from "@mui/material";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import fetcher from "@/shared/services/api-client";
-import { config } from "@/shared/utils/config";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useLibraries } from "@/features/books/hooks/useLibraries";
+import { useCreateLibrary } from "@/features/books/hooks/useCreateLibrary";
 import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 
 const LibraryManagementPage = () => {
-  const { token } = useAuth();
   useRequireAuth({ requiredRole: "ROLE_ADMIN" });
-  const { data: librariesData, error: librariesError } = useSWR(
-    token ? [`${config.API_URL}/library/allLibraries`, token] : null,
-    ([url, token]) => fetcher(url, token)
-  );
+  const { libraries: librariesData, isLoading, error: librariesError } = useLibraries();
+  const { createLibrary, isLoading: creating } = useCreateLibrary();
 
   const [newLibrary, setNewLibrary] = useState({
     name: "",
@@ -51,7 +47,7 @@ const LibraryManagementPage = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setNewLibrary((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -68,58 +64,33 @@ const LibraryManagementPage = () => {
     }
 
     try {
-      const response = await fetch(`${config.API_URL}/library/new`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...newLibrary,
-          openingTime: `${String(openingTime.getHours()).padStart(
-            2,
-            "0"
-          )}:${String(openingTime.getMinutes()).padEnd(2, "0")}`,
-          closingTime: `${String(closingTime.getHours()).padStart(
-            2,
-            "0"
-          )}:${String(closingTime.getMinutes()).padEnd(2, "0")}`,
-        }),
+      await createLibrary({
+        name: name.trim(),
+        address: address.trim(),
       });
-
-      if (response.ok) {
-        setSnackbar({
-          open: true,
-          message: "Библиотека успешно добавлена",
-          severity: "success",
-        });
-        setNewLibrary({
-          name: "",
-          address: "",
-          openingTime: null,
-          closingTime: null,
-        });
-        mutate([`${config.API_URL}/library/allLibraries`, token]);
-      } else {
-        const errorData = await response.json();
-        setSnackbar({
-          open: true,
-          message: errorData.message || "Ошибка при добавлении библиотеки",
-          severity: "error",
-        });
-      }
+      setSnackbar({
+        open: true,
+        message: "Библиотека успешно добавлена",
+        severity: "success",
+      });
+      setNewLibrary({
+        name: "",
+        address: "",
+        openingTime: null,
+        closingTime: null,
+      });
     } catch (error) {
       console.error("Ошибка при добавлении библиотеки:", error);
       setSnackbar({
         open: true,
-        message: "Ошибка. Попробуйте позже " + error,
+        message: "Ошибка. Попробуйте позже",
         severity: "error",
       });
     }
   };
 
-  if (!librariesData) {
-    return <Typography>Загрузка библиотек...</Typography>;
+  if (isLoading) {
+    return <LoadingSpinner fullScreen />;
   }
 
   if (librariesError) {
@@ -190,6 +161,7 @@ const LibraryManagementPage = () => {
             variant="contained"
             color="primary"
             onClick={handleAddLibrary}
+            disabled={creating}
             fullWidth
             sx={{ marginTop: "10px" }}
           >
@@ -210,14 +182,22 @@ const LibraryManagementPage = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {librariesData.map((library) => (
-              <TableRow key={library.id}>
-                <TableCell>{library.name}</TableCell>
-                <TableCell>{library.address}</TableCell>
-                <TableCell>{library.openingTime}</TableCell>
-                <TableCell>{library.closingTime}</TableCell>
+            {librariesData && librariesData.length > 0 ? (
+              librariesData.map((library) => (
+                <TableRow key={library.id}>
+                  <TableCell>{library.name}</TableCell>
+                  <TableCell>{library.address || "Не указан"}</TableCell>
+                  <TableCell>{library.openingTime || "Не указано"}</TableCell>
+                  <TableCell>{library.closingTime || "Не указано"}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} align="center">
+                  Нет библиотек
+                </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>

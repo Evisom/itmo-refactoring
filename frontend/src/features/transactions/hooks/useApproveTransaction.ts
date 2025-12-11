@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { transactionsApi, TransactionResponse } from "@/features/transactions/services/transactions-api";
+import transactionsApi from "@/features/transactions/services/transactions-api";
+import type { TransactionResponse } from "@/shared/types/api";
 import { mutate } from "swr";
 
 export const useApproveTransaction = () => {

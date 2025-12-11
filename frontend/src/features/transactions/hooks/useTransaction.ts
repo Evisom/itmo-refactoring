@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { transactionsApi, TransactionResponse } from "@/features/transactions/services/transactions-api";
+import transactionsApi from "@/features/transactions/services/transactions-api";
+import type { TransactionResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const useTransaction = (id: number | null) => {

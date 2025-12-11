@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import useSWR from "swr";
 import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { DateField } from "@mui/x-date-pickers/DateField";
@@ -10,26 +9,23 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { enUS } from "date-fns/locale";
 
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
-import { useAuth } from "@/features/auth/hooks/useAuth";
-import fetcher from "@/shared/services/api-client";
-import { config } from "@/shared/utils/config";
+import { useAuthors } from "@/features/books/hooks/useAuthors";
+import { useCreateAuthor } from "@/features/books/hooks/useCreateAuthor";
+import { useDeleteAuthor } from "@/features/books/hooks/useDeleteAuthor";
+import { useErrorAlert } from "@/shared/utils/useErrorAlert";
 
 import "./page.scss";
-import { useErrorAlert } from "@/shared/utils/useErrorAlert";
 export const Authors = () => {
-  const { token } = useAuth();
   const { error, showError } = useErrorAlert();
+  const { books: authors, isLoading } = useAuthors();
+  const { createAuthor, isLoading: creating } = useCreateAuthor();
+  const { deleteAuthor, isLoading: deleting } = useDeleteAuthor();
 
   const [formState, setFormState] = useState({
     name: "",
     surname: "",
     birthDate: "",
   });
-
-  const { data, mutate } = useSWR(
-    [token ? `${config.API_URL}/library/authors` : null, token],
-    ([url, token]) => fetcher(url, token)
-  );
 
   const handleInputChange =
     (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,33 +51,22 @@ export const Authors = () => {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch(`${config.API_URL}/library/authors`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formState),
+      await createAuthor({
+        name: formState.name.trim(),
+        surname: formState.surname.trim(),
+        birthDate: formState.birthDate || undefined,
       });
-      if (!response.ok) throw new Error("Ошибка при создании автора");
-      mutate();
+      setFormState({ name: "", surname: "", birthDate: "" });
     } catch (err) {
-      showError((err as Error).message);
+      showError((err as Error).message || "Ошибка при создании автора");
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`${config.API_URL}/library/authors/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Ошибка при удалении автора");
-      mutate();
+      await deleteAuthor(id);
     } catch (err) {
-      showError((err as Error).message);
+      showError((err as Error).message || "Ошибка при удалении автора");
     }
   };
 
@@ -100,6 +85,7 @@ export const Authors = () => {
             variant="outlined"
             color="error"
             onClick={() => handleDelete(params.row.id)}
+            disabled={deleting}
           >
             Удалить
           </Button>
@@ -144,7 +130,7 @@ export const Authors = () => {
 
             <Button
               variant="outlined"
-              disabled={!isValidForm()}
+                disabled={!isValidForm() || creating}
               onClick={handleSubmit}
             >
               Создать
@@ -158,12 +144,16 @@ export const Authors = () => {
       </div>
 
       <div className="results">
-        <DataGrid
-          rows={data}
-          columns={columns}
-          hideFooterPagination
-          hideFooterSelectedRowCount
-        />
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : (
+          <DataGrid
+            rows={authors || []}
+            columns={columns}
+            hideFooterPagination
+            hideFooterSelectedRowCount
+          />
+        )}
       </div>
     </>
   );

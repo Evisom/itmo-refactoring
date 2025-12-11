@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { librariesApi, LibraryResponse } from "@/features/books/services/libraries-api";
+import librariesApi from "@/features/books/services/libraries-api";
+import type { LibraryResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const useLibraries = () => {

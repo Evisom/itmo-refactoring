@@ -1,52 +1,11 @@
 import fetcher from "@/shared/services/api-client";
 import { config } from "@/shared/utils/config";
-
-export interface BookResponse {
-  id: number;
-  title: string;
-  yearPublished?: number;
-  isbn: string;
-  authors: Array<{ id: number; name: string; surname: string }>;
-  genre?: { id: number; name: string };
-  theme?: { id: number; name: string };
-  publisher?: { id: number; name: string };
-  copies?: Array<{
-    id: number;
-    bookId: number;
-    libraryId: number;
-    inventoryNumber: string;
-    available: boolean;
-  }>;
-  rating?: number;
-}
-
-export interface BookListResponse {
-  content: BookResponse[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-}
-
-export interface BookCreateRequest {
-  title: string;
-  yearPublished?: number;
-  isbn: string;
-  genreId: number;
-  themeId?: number;
-  publisherId?: number;
-  authorIds: number[];
-}
-
-export interface BookUpdateRequest {
-  title: string;
-  yearPublished?: number;
-  isbn: string;
-  genreId: number;
-  themeId?: number;
-  publisherId?: number;
-  authorIds: number[];
-}
+import type {
+  BookResponse,
+  BookListResponse,
+  BookCreateRequest,
+  BookUpdateRequest,
+} from "@/shared/types/api";
 
 export const booksApi = {
   getBooks: async (
