@@ -121,6 +121,8 @@ const ApprovalsPage = () => {
   if (!librariesData) return <Progress />;
   if (librariesError)
     return <Typography color="error">Ошибка загрузки библиотек</Typography>;
+  if (operationsError)
+    return <Typography color="error">Ошибка загрузки заявок</Typography>;
 
   return (
     <div>
@@ -151,29 +153,27 @@ const ApprovalsPage = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Имя и Фамилия</TableCell>
-                <TableCell>Почта</TableCell>
                 <TableCell>Книга</TableCell>
                 <TableCell>Автор</TableCell>
                 <TableCell>Inventory ID</TableCell>
+                <TableCell>Статус</TableCell>
                 <TableCell>Действия</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {operationsData.length > 0 ? (
+              {operationsData && operationsData.length > 0 ? (
                 operationsData.map((request) => (
                   <TableRow key={request.id}>
-                    <TableCell>
-                      {request.firstName} {request.lastName}
-                    </TableCell>
-                    <TableCell>{request.email}</TableCell>
                     <TableCell>{request.title}</TableCell>
                     <TableCell>
-                      {request.author
-                        .map((author) => `${author.name} ${author.surname}`)
-                        .join(", ")}
+                      {request.authors && request.authors.length > 0
+                        ? request.authors
+                            .map((author) => `${author.name} ${author.surname}`)
+                            .join(", ")
+                        : "Не указан"}
                     </TableCell>
                     <TableCell>{request.inventoryId}</TableCell>
+                    <TableCell>{request.status}</TableCell>
                     <TableCell>
                       <Button
                         variant="contained"
@@ -198,7 +198,7 @@ const ApprovalsPage = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={5} align="center">
                     Нет заявок
                   </TableCell>
                 </TableRow>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <style name="Google" />
+    <property name="indentationSize" value="4" />
+    <property name="continuationIndentationSize" value="8" />
+    <property name="blankLinesBeforeFirstClassMember" value="1" />
+    <property name="blankLinesBeforeFirstMember" value="1" />
+    <property name="blankLinesAfterImports" value="1" />
+    <property name="blankLinesBetweenImportGroups" value="1" />
+    <property name="blankLinesAroundFieldInInterface" value="1" />
+    <property name="blankLinesAroundMethodInInterface" value="1" />
+    <property name="blankLinesAroundMethodBody" value="0" />
+    <property name="blankLinesAroundInitializer" value="0" />
+    <property name="blankLinesAroundType" value="1" />
+    <property name="blankLinesAroundBlock" value="0" />
+    <property name="blankLinesBeforeFirstTopLevelClass" value="0" />
+    <property name="blankLinesAfterPackage" value="1" />
+    <property name="blankLinesAroundInitializer" value="0" />
+    <property name="blankLinesAroundMethodBody" value="0" />
+    <property name="blankLinesAroundBlock" value="0" />
+    <property name="blankLinesBeforeFirstTopLevelClass" value="0" />
+    <property name="blankLinesAfterPackage" value="1" />
+</configuration>

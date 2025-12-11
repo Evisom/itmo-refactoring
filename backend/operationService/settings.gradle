@@ -1,1 +1,4 @@
 rootProject.name = 'operationService'
+
+include 'shared-library'
+project(':shared-library').projectDir = file('../shared-library')

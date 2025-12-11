@@ -12,8 +12,8 @@ services:
 
   book:
     build:
-      context: ./bookService
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: bookService/Dockerfile
     ports:
       - "5112:8082"
     networks:
