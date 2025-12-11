@@ -45,6 +45,7 @@ const Copies = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bookSearchQuery, setBookSearchQuery] = useState("");
   const [bookOptions, setBookOptions] = useState<Array<{ id: number; label: string }>>([]);
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
   const { libraries } = useLibraries();
   const { books: bookSearchResults } = useBooks(
@@ -59,7 +60,7 @@ const Copies = () => {
   const { deleteBookCopy, isLoading: deleting } = useDeleteBookCopy();
 
   React.useEffect(() => {
-    if (bookSearchResults) {
+    if (bookSearchResults && bookSearchResults.length > 0) {
       const newOptions = bookSearchResults.map((book) => ({
         id: book.id,
         label: book.title,
@@ -67,20 +68,23 @@ const Copies = () => {
       setBookOptions((prev) => {
         const existingIds = new Set(prev.map((opt) => opt.id));
         const uniqueNew = newOptions.filter((opt) => !existingIds.has(opt.id));
-        return [...prev, ...uniqueNew];
+        if (uniqueNew.length === 0) return prev;
+        const updated = [...prev, ...uniqueNew];
+        // Ограничиваем количество опций, чтобы избежать проблем с производительностью
+        return updated.slice(-50);
       });
     }
   }, [bookSearchResults]);
 
+  React.useEffect(() => {
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
+  }, [debounceTimer]);
 
-  const handleInputChange = (field: string) => (event: unknown, value?: unknown) => {
-    setFormState((prevState) => ({
-      ...prevState,
-      [field]: field === "available" && event && typeof event === "object" && "target" in event
-        ? (event.target as { checked: boolean }).checked
-        : value,
-    }));
-  };
+
 
   const handleEdit = (row: { id: number; bookId: number; libraryId: number; inventoryNumber: string; available: boolean }) => {
     const bookTitle = bookSearchResults?.find((b) => b.id === row.bookId)?.title || "Неизвестная книга";
@@ -233,9 +237,19 @@ const Copies = () => {
               bookOptions.find((option) => option.id.toString() === formState.bookId) ||
               null
             }
-            onInputChange={(_event, value) => {
-              handleBookSearch(value);
-              if (value === "") {
+            onInputChange={(_event, value, reason) => {
+              // Игнорируем события reset, чтобы избежать бесконечных циклов
+              if (reason === "reset") return;
+              
+              if (debounceTimer) {
+                clearTimeout(debounceTimer);
+              }
+              const timer = setTimeout(() => {
+                setBookSearchQuery(value || "");
+              }, 300);
+              setDebounceTimer(timer);
+              
+              if (!value || value === "") {
                 setFormState((prev) => ({
                   ...prev,
                   bookId: "",
@@ -251,7 +265,10 @@ const Copies = () => {
               }));
             }}
             getOptionLabel={(option: { id: number; label: string }) => option.label || ""}
-            isOptionEqualToValue={(option, value) => option.id === value?.id}
+            isOptionEqualToValue={(option, value) => {
+              if (!value || !option) return false;
+              return option.id === value.id;
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -291,7 +308,10 @@ const Copies = () => {
             label="Инвентарный номер"
             value={formState.inventoryNumber}
             onChange={(e) =>
-              handleInputChange("inventoryNumber")(null, e.target.value)
+              setFormState((prev) => ({
+                ...prev,
+                inventoryNumber: e.target.value,
+              }))
             }
             fullWidth
             margin="normal"
@@ -300,7 +320,12 @@ const Copies = () => {
             control={
               <Switch
                 checked={formState.available}
-                onChange={(e) => handleInputChange("available")(e)}
+                onChange={(e) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    available: e.target.checked,
+                  }))
+                }
               />
             }
             label="Доступен"

@@ -213,10 +213,14 @@ export interface LibraryCopyResponse {
 // Типы для транзакций
 export interface TransactionResponse {
   id: number;
-  userId: string;
-  bookCopyId: number;
-  status: "PENDING" | "APPROVED" | "DECLINED" | "RETURNED" | "CANCELLED";
-  createdAt: string;
+  title: string;
+  authors?: Array<{ id: number; name: string; surname: string; birthDate?: string }>;
+  inventoryId: string;
+  status: string;
+  // Для обратной совместимости
+  userId?: string;
+  bookCopyId?: number;
+  createdAt?: string;
   updatedAt?: string;
   bookCopy?: {
     id: number;

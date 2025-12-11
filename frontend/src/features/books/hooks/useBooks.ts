@@ -4,7 +4,6 @@ import useSWR from "swr";
 import booksApi from "@/features/books/services/books-api";
 import type { BookListResponse } from "@/shared/types/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { defaultSWROptions } from "@/shared/services/swr-config";
 
 interface UseBooksParams {
   page?: number;
@@ -23,10 +22,21 @@ interface UseBooksParams {
 export const useBooks = (params?: UseBooksParams) => {
   const { token } = useAuth();
 
+  // Отключаем кеширование полностью - всегда загружаем данные заново
+  // Используем dedupingInterval: 0 для отключения дедупликации
   const { data, error, isLoading, isValidating, mutate } = useSWR<BookListResponse>(
     token ? ["books", params, token] : null,
     () => booksApi.getBooks(token, params),
-    defaultSWROptions
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      revalidateIfStale: true,
+      revalidateOnMount: true,
+      dedupingInterval: 0, // Отключаем дедупликацию - всегда загружаем заново
+      keepPreviousData: false,
+      refreshInterval: 0,
+      shouldRetryOnError: false,
+    }
   );
 
   return {

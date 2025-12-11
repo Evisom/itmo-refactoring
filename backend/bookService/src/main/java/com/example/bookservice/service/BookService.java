@@ -101,6 +101,16 @@ public class BookService {
 
       Book book = toEntity(request);
       Book savedBook = bookRepository.save(book);
+      // Принудительно синхронизируем с БД
+      bookRepository.flush();
+      // Очищаем контекст персистентности и загружаем заново, чтобы получить все связи
+      Long savedBookId = savedBook.getId();
+      savedBook = bookRepository.findById(savedBookId)
+          .orElseThrow(() -> new ResourceNotFoundException("Book not found after creation"));
+      // Убеждаемся, что связи загружены (особенно ManyToMany с авторами)
+      if (savedBook.getAuthors() != null) {
+        savedBook.getAuthors().size(); // Инициализируем ленивую коллекцию
+      }
       BookResponse response = bookMapper.toResponse(savedBook);
       return response;
     } catch (Exception e) {

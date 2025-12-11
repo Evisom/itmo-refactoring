@@ -55,19 +55,28 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
 
   useEffect(() => {
     if (type === "edit" && bookData && publishersData && themesData && authorsData && genresData) {
+      const author = bookData.authors && bookData.authors.length > 0
+        ? authorsData.find((a) => a.id === bookData.authors[0]?.id) || null
+        : null;
+      
       reset({
         title: bookData.title || "",
         publisher:
-          publishersData.find((p) => p.id === bookData?.publisher?.id) || null,
-        theme: themesData.find((t) => t.id === bookData?.theme?.id) || null,
-        authors:
-          authorsData.find((a) => a.id === bookData?.authors[0]?.id) || null,
-        genre: genresData.find((g) => g.id === bookData?.genre?.id) || null,
+          bookData.publisher
+            ? publishersData.find((p) => p.id === bookData.publisher?.id) || null
+            : null,
+        theme: bookData.theme
+          ? themesData.find((t) => t.id === bookData.theme?.id) || null
+          : null,
+        authors: author,
+        genre: bookData.genre
+          ? genresData.find((g) => g.id === bookData.genre?.id) || null
+          : null,
         yearPublished: bookData.yearPublished?.toString() || "",
         isbn: bookData.isbn || "",
       });
     }
-  }, [type, bookData, publishersData, themesData, authorsData, genresData, reset]);
+  }, [type, bookData?.id, publishersData?.length, themesData?.length, authorsData?.length, genresData?.length]);
 
   const onSubmit = async (data: BookFormData) => {
     try {
@@ -92,10 +101,12 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
 
       if (type === "new") {
         await createBook(payload);
+        // Переходим на главную страницу - кеш отключен, данные загрузятся заново
+        router.push("/");
       } else {
         await updateBook(id, payload);
+        router.back();
       }
-      router.back();
     } catch (err) {
       handleError(err, "Book.onSubmit");
     }
@@ -189,7 +200,10 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
               getOptionLabel={(option) => option.name}
               value={field.value}
               onChange={(_event, newValue) => field.onChange(newValue)}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
+              isOptionEqualToValue={(option, value) => {
+                if (!value) return false;
+                return option.id === value.id;
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -212,7 +226,10 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
               getOptionLabel={(option) => option.name}
               value={field.value}
               onChange={(_event, newValue) => field.onChange(newValue)}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
+              isOptionEqualToValue={(option, value) => {
+                if (!value) return false;
+                return option.id === value.id;
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -229,13 +246,26 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
         <Controller
           name="authors"
           control={control}
-          render={({ field }) => (
+          render={({ field: { value, onChange } }) => (
             <Autocomplete
               options={authorsData || []}
-              getOptionLabel={(option) => `${option.name} ${option.surname}`}
-              value={field.value}
-              onChange={(_event, newValue) => field.onChange(newValue)}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
+              getOptionLabel={(option) => {
+                if (!option) return "";
+                return `${option.name} ${option.surname}`;
+              }}
+              value={value || null}
+              onChange={(_event, newValue) => {
+                onChange(newValue);
+              }}
+              isOptionEqualToValue={(option, val) => {
+                if (!val || !option) return false;
+                return option.id === val.id;
+              }}
+              renderOption={(props, option) => (
+                <li {...props} key={`author-${option.id}`}>
+                  {`${option.name} ${option.surname}`}
+                </li>
+              )}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -258,7 +288,10 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
               getOptionLabel={(option) => option.name}
               value={field.value}
               onChange={(_event, newValue) => field.onChange(newValue)}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
+              isOptionEqualToValue={(option, value) => {
+                if (!value) return false;
+                return option.id === value.id;
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}

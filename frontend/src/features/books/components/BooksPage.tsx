@@ -85,7 +85,8 @@ export const BooksPage: React.FC<BooksPageProps> = ({ onBookClick }) => {
   };
 
   const handleSearch = () => {
-    mutate();
+    // Принудительно обновляем данные
+    mutate(undefined, { revalidate: true });
   };
 
   const totalPages = Math.ceil((totalElements || 1) / pagination.size);
@@ -168,21 +169,20 @@ export const BooksPage: React.FC<BooksPageProps> = ({ onBookClick }) => {
                 }
                 renderValue={(selected) => (selected as string[]).join(", ")}
               >
-                {authorsData?.map((author) => (
-                  <MenuItem
-                    key={author.id}
-                    value={`${author.name} ${author.surname}`}
-                  >
-                    <Checkbox
-                      checked={filterState.authors.includes(
-                        `${author.name} ${author.surname}`
-                      )}
-                    />
-                    <ListItemText
-                      primary={`${author.name} ${author.surname}`}
-                    />
-                  </MenuItem>
-                ))}
+                {authorsData?.map((author) => {
+                  const authorString = `${author.name} ${author.surname}`;
+                  return (
+                    <MenuItem
+                      key={`author-${author.id}`}
+                      value={authorString}
+                    >
+                      <Checkbox
+                        checked={filterState.authors.includes(authorString)}
+                      />
+                      <ListItemText primary={authorString} />
+                    </MenuItem>
+                  );
+                })}
               </Select>
             </FormControl>
             <Typography gutterBottom>Количество экземпляров</Typography>

@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import booksApi from "@/features/books/services/books-api";
-import type { BookCreateRequest, BookResponse, BookListResponse } from "@/shared/types/api";
-import { mutate } from "swr";
+import type { BookCreateRequest, BookResponse } from "@/shared/types/api";
+import { useSWRConfig } from "swr";
 
 export const useCreateBook = () => {
   const { token } = useAuth();
+  const { cache, mutate } = useSWRConfig();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
@@ -19,65 +20,24 @@ export const useCreateBook = () => {
     setIsLoading(true);
     setError(null);
 
-    const optimisticBook: BookResponse = {
-      id: Date.now(),
-      title: data.title,
-      isbn: data.isbn,
-      yearPublished: data.yearPublished,
-      authors: [],
-      genre: undefined,
-      theme: undefined,
-      publisher: undefined,
-      rating: 0,
-    };
-
-    const cacheKey = ["books", undefined, token];
-
     try {
-      await mutate(
-        cacheKey,
-        async (current: BookListResponse | undefined) => {
-          if (!current) {
-            return {
-              content: [optimisticBook],
-              totalElements: 1,
-              totalPages: 1,
-              size: 10,
-              number: 0,
-            };
-          }
-          return {
-            ...current,
-            content: [optimisticBook, ...current.content],
-            totalElements: current.totalElements + 1,
-          };
-        },
-        false
-      );
-
       const book = await booksApi.createBook(token, data);
 
+      // Инвалидируем все запросы к списку книг
+      // Кеш отключен, но все равно инвалидируем для гарантии
       await mutate(
-        cacheKey,
-        async (current: BookListResponse | undefined) => {
-          if (!current) return current;
-          return {
-            ...current,
-            content: current.content.map((b) =>
-              b.id === optimisticBook.id ? book : b
-            ),
-          };
+        (key) => {
+          if (!Array.isArray(key)) return false;
+          if (key[0] !== "books") return false;
+          if (key.length >= 3 && key[2] !== token) return false;
+          return true;
         },
-        false
+        undefined,
+        { revalidate: true }
       );
 
-      await mutate(cacheKey);
       return book;
     } catch (err) {
-      const previousData = await mutate(cacheKey);
-      if (previousData) {
-        await mutate(cacheKey, previousData, false);
-      }
       setError(err);
       throw err;
     } finally {

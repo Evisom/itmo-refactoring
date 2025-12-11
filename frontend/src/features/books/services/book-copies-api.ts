@@ -19,7 +19,7 @@ const bookCopiesApi = {
     if (params?.size !== undefined) searchParams.append("size", params.size.toString());
 
     const queryString = searchParams.toString();
-    const url = `${config.API_V2_URL}/book-copies${queryString ? `?${queryString}` : ""}`;
+    const url = `${config.API_V2_URL}/copies${queryString ? `?${queryString}` : ""}`;
     return fetcher(url, token);
   },
 
@@ -30,22 +30,23 @@ const bookCopiesApi = {
   ): Promise<BookCopyListResponse> => {
     if (!token) throw new Error("No token provided");
     const searchParams = new URLSearchParams();
+    searchParams.append("bookId", bookId.toString());
     if (params?.page !== undefined) searchParams.append("page", params.page.toString());
     if (params?.size !== undefined) searchParams.append("size", params.size.toString());
 
     const queryString = searchParams.toString();
-    const url = `${config.API_V2_URL}/books/${bookId}/copies${queryString ? `?${queryString}` : ""}`;
+    const url = `${config.API_V2_URL}/copies?${queryString}`;
     return fetcher(url, token);
   },
 
   getBookCopy: async (token: string | null, id: number): Promise<BookCopyResponse> => {
     if (!token) throw new Error("No token provided");
-    return fetcher(`${config.API_V2_URL}/book-copies/${id}`, token);
+    return fetcher(`${config.API_V2_URL}/copies/${id}`, token);
   },
 
   createBookCopy: async (token: string | null, data: BookCopyCreateRequest): Promise<BookCopyResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await apiFetch(`${config.API_V2_URL}/book-copies`, {
+    const response = await apiFetch(`${config.API_V2_URL}/copies`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -59,7 +60,7 @@ const bookCopiesApi = {
 
   updateBookCopy: async (token: string | null, id: number, data: BookCopyUpdateRequest): Promise<BookCopyResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await apiFetch(`${config.API_V2_URL}/book-copies/${id}`, {
+    const response = await apiFetch(`${config.API_V2_URL}/copies/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -73,7 +74,7 @@ const bookCopiesApi = {
 
   deleteBookCopy: async (token: string | null, id: number): Promise<void> => {
     if (!token) throw new Error("No token provided");
-    await apiFetch(`${config.API_V2_URL}/book-copies/${id}`, {
+    await apiFetch(`${config.API_V2_URL}/copies/${id}`, {
       method: "DELETE",
       token,
     });

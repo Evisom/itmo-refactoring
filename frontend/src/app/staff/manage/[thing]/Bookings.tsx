@@ -177,15 +177,19 @@ const ApprovalsPage = () => {
               ) : pendingTransactions && pendingTransactions.length > 0 ? (
                 pendingTransactions.map((request) => (
                   <TableRow key={request.id}>
-                    <TableCell>{request.bookCopy?.book?.title || "Неизвестно"}</TableCell>
+                    <TableCell>{request.title || request.bookCopy?.book?.title || "Неизвестно"}</TableCell>
                     <TableCell>
-                      {request.bookCopy?.book?.authors && request.bookCopy.book.authors.length > 0
+                      {request.authors && request.authors.length > 0
+                        ? request.authors
+                            .map((author: { name: string; surname: string }) => `${author.name} ${author.surname}`)
+                            .join(", ")
+                        : request.bookCopy?.book?.authors && request.bookCopy.book.authors.length > 0
                         ? request.bookCopy.book.authors
                             .map((author: { name: string; surname: string }) => `${author.name} ${author.surname}`)
                             .join(", ")
                         : "Не указан"}
                     </TableCell>
-                    <TableCell>{request.bookCopy?.inventoryNumber || "Не указан"}</TableCell>
+                    <TableCell>{request.inventoryId || request.bookCopy?.inventoryNumber || "Не указан"}</TableCell>
                     <TableCell>{request.status}</TableCell>
                     <TableCell>
                       <Button
