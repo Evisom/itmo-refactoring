@@ -71,14 +71,23 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
 
   const onSubmit = async (data: BookFormData) => {
     try {
+      if (!data.genre?.id) {
+        handleError(new Error("Жанр обязателен"), "Book.onSubmit");
+        return;
+      }
+      if (!data.authors?.id) {
+        handleError(new Error("Автор обязателен"), "Book.onSubmit");
+        return;
+      }
+      
       const payload = {
         title: data.title,
         isbn: data.isbn,
         yearPublished: data.yearPublished ? parseInt(data.yearPublished, 10) : undefined,
-        genreId: data.genre?.id || 0,
+        genreId: data.genre.id,
         themeId: data.theme?.id,
         publisherId: data.publisher?.id,
-        authorIds: data.authors ? [data.authors.id] : [],
+        authorIds: [data.authors.id],
       };
 
       if (type === "new") {
@@ -180,6 +189,7 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
               getOptionLabel={(option) => option.name}
               value={field.value}
               onChange={(_event, newValue) => field.onChange(newValue)}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -202,6 +212,7 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
               getOptionLabel={(option) => option.name}
               value={field.value}
               onChange={(_event, newValue) => field.onChange(newValue)}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -224,6 +235,7 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
               getOptionLabel={(option) => `${option.name} ${option.surname}`}
               value={field.value}
               onChange={(_event, newValue) => field.onChange(newValue)}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -246,6 +258,7 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
               getOptionLabel={(option) => option.name}
               value={field.value}
               onChange={(_event, newValue) => field.onChange(newValue)}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
               renderInput={(params) => (
                 <TextField
                   {...params}

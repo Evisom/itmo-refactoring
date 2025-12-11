@@ -17,15 +17,18 @@ const ratingsApi = {
     }
   ): Promise<RatingResponse[]> => {
     if (!token) throw new Error("No token provided");
+    if (!params?.bookId) {
+      return [];
+    }
 
     const searchParams = new URLSearchParams();
-    if (params?.bookId !== undefined) searchParams.append("bookId", params.bookId.toString());
+    searchParams.append("bookId", params.bookId.toString());
     if (params?.userId) searchParams.append("userId", params.userId);
     if (params?.page !== undefined) searchParams.append("page", params.page.toString());
     if (params?.size !== undefined) searchParams.append("size", params.size.toString());
 
     const queryString = searchParams.toString();
-    const url = `${config.OPERATION_API_V2_URL}/ratings${queryString ? `?${queryString}` : ""}`;
+    const url = `${config.OPERATION_API_V2_URL}/ratings?${queryString}`;
     return fetcher(url, token);
   },
 

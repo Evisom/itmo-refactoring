@@ -7,13 +7,17 @@ interface RatingCardProps {
 }
 
 export const RatingCard: React.FC<RatingCardProps> = ({ rating }) => {
+  const ratingValue = rating.ratingValue ?? rating.rating ?? 0;
+  const comment = rating.review ?? rating.comment ?? "Без текста";
+  const createdAt = rating.time ?? rating.createdAt;
+  
   return (
     <Card sx={{ marginBottom: "16px", marginTop: "16px" }}>
       <CardContent>
-        <Rating value={rating.rating} readOnly />
-        <Typography>{rating.comment || "Без текста"}</Typography>
+        <Rating value={ratingValue} readOnly />
+        <Typography>{comment}</Typography>
         <Typography variant="body2" color="textSecondary">
-          {new Date(rating.createdAt).toLocaleString() || "Неизвестное время"}
+          {createdAt ? new Date(createdAt).toLocaleString() : "Неизвестное время"}
         </Typography>
         {rating.user && (
           <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>

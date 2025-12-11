@@ -44,12 +44,13 @@ const Copies = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bookSearchQuery, setBookSearchQuery] = useState("");
+  const [bookOptions, setBookOptions] = useState<Array<{ id: number; label: string }>>([]);
 
   const { libraries } = useLibraries();
   const { books: bookSearchResults } = useBooks(
     bookSearchQuery ? { name: bookSearchQuery, size: 10 } : undefined
   );
-  const { copies, isLoading: copiesLoading, mutate } = useAllBookCopies({
+  const { copies, totalElements, isLoading: copiesLoading, mutate } = useAllBookCopies({
     page: paginationModel.page,
     size: paginationModel.pageSize,
   });
@@ -57,19 +58,20 @@ const Copies = () => {
   const { updateBookCopy, isLoading: updating } = useUpdateBookCopy();
   const { deleteBookCopy, isLoading: deleting } = useDeleteBookCopy();
 
-  const bookOptions = bookSearchResults?.map((book) => ({
-    id: book.id,
-    label: book.title,
-  })) || [];
+  React.useEffect(() => {
+    if (bookSearchResults) {
+      const newOptions = bookSearchResults.map((book) => ({
+        id: book.id,
+        label: book.title,
+      }));
+      setBookOptions((prev) => {
+        const existingIds = new Set(prev.map((opt) => opt.id));
+        const uniqueNew = newOptions.filter((opt) => !existingIds.has(opt.id));
+        return [...prev, ...uniqueNew];
+      });
+    }
+  }, [bookSearchResults]);
 
-  const handleBookSearch = (query: string) => {
-    setBookSearchQuery(query);
-  };
-
-  const fetchBookTitle = async (bookId: number) => {
-    const book = bookSearchResults?.find((b) => b.id === bookId);
-    return book?.title || "Неизвестная книга";
-  };
 
   const handleInputChange = (field: string) => (event: unknown, value?: unknown) => {
     setFormState((prevState) => ({
@@ -80,9 +82,11 @@ const Copies = () => {
     }));
   };
 
-  const handleEdit = async (row: { id: number; bookId: number; libraryId: number; inventoryNumber: string; available: boolean }) => {
-    const bookTitle = await fetchBookTitle(row.bookId);
-    setBookOptions((prev) => [...prev, { id: row.bookId, label: bookTitle }]);
+  const handleEdit = (row: { id: number; bookId: number; libraryId: number; inventoryNumber: string; available: boolean }) => {
+    const bookTitle = bookSearchResults?.find((b) => b.id === row.bookId)?.title || "Неизвестная книга";
+    if (!bookOptions.find((opt) => opt.id === row.bookId)) {
+      setBookOptions((prev) => [...prev, { id: row.bookId, label: bookTitle }]);
+    }
     setFormState({
       id: row.id,
       bookId: row.bookId.toString(),
@@ -201,7 +205,7 @@ const Copies = () => {
           autoHeight
           pagination
           paginationMode="server"
-          rowCount={copies?.length || 0}
+          rowCount={totalElements || 0}
           paginationModel={paginationModel}
           onPaginationModelChange={(model) => {
             setPaginationModel((prev) => ({

@@ -77,8 +77,8 @@ export const BookDetailsPage: React.FC<BookDetailsPageProps> = ({ bookId }) => {
     try {
       await createRating({
         bookId: bookId,
-        rating,
-        comment: comment || undefined,
+        ratingValue: rating,
+        review: comment || undefined,
       });
       setSnackbar({
         open: true,

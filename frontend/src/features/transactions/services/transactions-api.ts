@@ -20,16 +20,33 @@ const transactionsApi = {
     }
   ): Promise<TransactionResponse[]> => {
     if (!token) throw new Error("No token provided");
+    
+    // Для bookings API требует обязательный libraryId (для LIBRARIAN)
+    // Для истории пользователя используется userId
+    if (params?.libraryId === undefined && params?.userId === undefined) {
+      return [];
+    }
 
     const searchParams = new URLSearchParams();
-    if (params?.libraryId !== undefined) searchParams.append("libraryId", params.libraryId.toString());
-    if (params?.userId) searchParams.append("userId", params.userId);
-    if (params?.status) searchParams.append("status", params.status);
-    if (params?.page !== undefined) searchParams.append("page", params.page.toString());
-    if (params?.size !== undefined) searchParams.append("size", params.size.toString());
+    if (params?.libraryId !== undefined) {
+      searchParams.append("libraryId", params.libraryId.toString());
+    }
+    if (params?.userId) {
+      searchParams.append("userId", params.userId);
+    }
+    // status не передается в v2 API для bookings - фильтрация происходит на сервере
+    if (params?.page !== undefined) {
+      searchParams.append("page", params.page.toString());
+    }
+    if (params?.size !== undefined) {
+      searchParams.append("size", params.size.toString());
+    }
 
     const queryString = searchParams.toString();
-    const url = `${config.OPERATION_API_V2_URL}/transactions${queryString ? `?${queryString}` : ""}`;
+    if (!queryString) {
+      return [];
+    }
+    const url = `${config.OPERATION_API_V2_URL}/transactions?${queryString}`;
     return fetcher(url, token);
   },
 
@@ -43,21 +60,14 @@ const transactionsApi = {
     data: TransactionCreateRequest
   ): Promise<TransactionResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.OPERATION_API_V2_URL}/transactions?bookId=${data.bookId}&libraryId=${data.libraryId}`, {
+    const response = await apiFetch(`${config.OPERATION_API_V2_URL}/transactions?bookId=${data.bookId}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({ libraryId: data.libraryId }),
+      token,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        errorCode: "UNKNOWN_ERROR",
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw error;
-    }
 
     return response.json();
   },

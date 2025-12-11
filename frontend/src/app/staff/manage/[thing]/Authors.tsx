@@ -21,7 +21,7 @@ import { authorFormSchema, type AuthorFormData } from "@/shared/validation/schem
 import "./page.scss";
 export const Authors = () => {
   const { error, handleError } = useErrorHandler();
-  const { books: authors, isLoading } = useAuthors();
+  const { authors, isLoading } = useAuthors();
   const { createAuthor, isLoading: creating } = useCreateAuthor();
   const { deleteAuthor, isLoading: deleting } = useDeleteAuthor();
 

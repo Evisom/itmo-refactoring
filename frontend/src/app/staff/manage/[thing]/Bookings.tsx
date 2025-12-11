@@ -45,8 +45,11 @@ const ApprovalsPage = () => {
 
   const { libraries: librariesData, error: librariesError } = useLibraries();
   const { transactions: operationsData, isLoading: transactionsLoading, error: operationsError, mutate } = useTransactions(
-    selectedLibrary ? { libraryId: selectedLibrary, status: "PENDING" } : undefined
+    selectedLibrary ? { libraryId: selectedLibrary } : undefined
   );
+  
+  // Фильтруем PENDING транзакции на клиенте
+  const pendingTransactions = operationsData?.filter((t) => t.status === "PENDING") || [];
   const { approveTransaction, isLoading: approving } = useApproveTransaction();
   const { declineTransaction, isLoading: declining } = useDeclineTransaction();
 
@@ -171,8 +174,8 @@ const ApprovalsPage = () => {
                     <LoadingSpinner />
                   </TableCell>
                 </TableRow>
-              ) : operationsData && operationsData.length > 0 ? (
-                operationsData.map((request) => (
+              ) : pendingTransactions && pendingTransactions.length > 0 ? (
+                pendingTransactions.map((request) => (
                   <TableRow key={request.id}>
                     <TableCell>{request.bookCopy?.book?.title || "Неизвестно"}</TableCell>
                     <TableCell>

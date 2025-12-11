@@ -256,9 +256,14 @@ export interface RatingResponse {
   id: number;
   bookId: number;
   userId: string;
-  rating: number;
+  ratingValue: number;
+  review?: string;
+  time?: string;
+  bookTitle?: string;
+  // Для обратной совместимости
+  rating?: number;
   comment?: string;
-  createdAt: string;
+  createdAt?: string;
   user?: {
     id: string;
     username: string;
@@ -267,7 +272,10 @@ export interface RatingResponse {
 
 export interface RatingCreateRequest {
   bookId: number;
-  rating: number;
+  ratingValue: number;
+  review?: string;
+  // Для обратной совместимости
+  rating?: number;
   comment?: string;
 }
 
