@@ -57,6 +57,9 @@ public class SecurityConfig {
                     .permitAll() // Публичные endpoints v1
                     .requestMatchers("/api/v2/books", "/api/v2/books/**")
                     .permitAll() // Публичные endpoints v2
+                    .requestMatchers("/api/v2/authors", "/api/v2/genres", "/api/v2/themes", 
+                                     "/api/v2/publishers", "/api/v2/libraries", "/api/v2/libraries/**")
+                    .permitAll() // Публичные endpoints v2 для чтения
                     .anyRequest()
                     .authenticated()); // Остальные требуют аутентификации
     return http.build();

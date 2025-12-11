@@ -54,11 +54,13 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     networks:
       - boobook-network
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest

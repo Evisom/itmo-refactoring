@@ -91,13 +91,14 @@ public class BookService {
 
   @Transactional
   public BookResponse createBook(BookCreateRequest request) {
-    Book bookFromISBN = bookRepository.findBookByISBN(request.getISBN());
+    Book bookFromISBN = bookRepository.findBookByISBN(request.getIsbn());
     if (bookFromISBN != null) {
       throw new ConflictException("Book already exist");
     }
 
     Book book = toEntity(request);
-    return bookMapper.toResponse(bookRepository.save(book));
+    Book savedBook = bookRepository.save(book);
+    return bookMapper.toResponse(savedBook);
   }
 
   @Transactional
@@ -115,7 +116,7 @@ public class BookService {
     Book book = new Book();
     book.setTitle(request.getTitle());
     book.setYearPublished(request.getYearPublished());
-    book.setISBN(request.getISBN());
+    book.setISBN(request.getIsbn());
 
     if (request.getGenreId() != null) {
       Genre genre =
@@ -169,7 +170,7 @@ public class BookService {
   private void updateEntity(Book book, BookUpdateRequest request) {
     book.setTitle(request.getTitle());
     book.setYearPublished(request.getYearPublished());
-    book.setISBN(request.getISBN());
+    book.setISBN(request.getIsbn());
 
     if (request.getGenreId() != null) {
       Genre genre =

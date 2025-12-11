@@ -35,14 +35,25 @@ public class BookMapper {
           book.getAuthors().stream().map(this::toAuthorResponse).collect(Collectors.toList()));
     }
 
-    List<BookCopy> copies =
-        copiesRepository
-            .findByBookId(book.getId(), org.springframework.data.domain.Pageable.unpaged())
-            .getContent();
-    if (copies != null && !copies.isEmpty()) {
-      response.setCopies(
-          copies.stream().map(bookCopyMapper::toResponse).collect(Collectors.toList()));
-    } else {
+    try {
+      if (book.getId() != null) {
+        List<BookCopy> copies =
+            copiesRepository
+                .findByBookId(book.getId(), org.springframework.data.domain.Pageable.unpaged())
+                .getContent();
+        if (copies != null && !copies.isEmpty()) {
+          response.setCopies(
+              copies.stream()
+                  .map(bookCopyMapper::toResponse)
+                  .filter(copy -> copy != null)
+                  .collect(Collectors.toList()));
+        } else {
+          response.setCopies(Collections.emptyList());
+        }
+      } else {
+        response.setCopies(Collections.emptyList());
+      }
+    } catch (Exception e) {
       response.setCopies(Collections.emptyList());
     }
 

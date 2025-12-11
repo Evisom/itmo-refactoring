@@ -8,10 +8,17 @@ import org.springframework.stereotype.Component;
 public class BookCopyMapper {
 
   public BookCopyResponse toResponse(BookCopy bookCopy) {
+    if (bookCopy == null) {
+      return null;
+    }
     BookCopyResponse response = new BookCopyResponse();
     response.setId(bookCopy.getId());
-    response.setBookId(bookCopy.getBook().getId());
-    response.setLibraryId(bookCopy.getLibrary().getId());
+    if (bookCopy.getBook() != null) {
+      response.setBookId(bookCopy.getBook().getId());
+    }
+    if (bookCopy.getLibrary() != null) {
+      response.setLibraryId(bookCopy.getLibrary().getId());
+    }
     response.setInventoryNumber(bookCopy.getInventoryNumber());
     response.setAvailable(bookCopy.getAvailable());
     return response;

@@ -15,7 +15,7 @@ public class BookCreateRequest {
   private Integer yearPublished;
 
   @NotBlank(message = "ISBN is required")
-  private String ISBN;
+  private String isbn;
 
   @NotNull(message = "Genre ID is required")
   private Long genreId;

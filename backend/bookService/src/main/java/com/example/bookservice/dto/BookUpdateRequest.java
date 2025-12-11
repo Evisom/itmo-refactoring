@@ -14,7 +14,7 @@ public class BookUpdateRequest {
   private Integer yearPublished;
 
   @NotBlank(message = "ISBN is required")
-  private String ISBN;
+  private String isbn;
 
   private Long genreId;
 

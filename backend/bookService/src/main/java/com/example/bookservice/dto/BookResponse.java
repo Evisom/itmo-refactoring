@@ -14,6 +14,7 @@ public class BookResponse {
   private Long id;
   private String title;
   private Integer yearPublished;
+  @com.fasterxml.jackson.annotation.JsonProperty("isbn")
   private String ISBN;
   private List<AuthorResponse> authors;
   private Genre genre;

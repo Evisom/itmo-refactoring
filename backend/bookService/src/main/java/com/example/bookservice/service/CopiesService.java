@@ -49,9 +49,13 @@ public class CopiesService {
       return false;
     }
 
-    copiesRepository.deleteById(id);
-
-    return true;
+    try {
+      copiesRepository.deleteById(id);
+      return true;
+    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+      throw new com.example.shared.exception.ConflictException(
+          "Cannot delete book copy: it is associated with existing transactions");
+    }
   }
 
   @Transactional

@@ -19,8 +19,9 @@ RUN chmod +x operationService/gradlew
 WORKDIR /app/operationService
 
 RUN ./gradlew build -x test --no-daemon || \
-    (sleep 10 && ./gradlew build -x test --no-daemon) || \
-    (sleep 20 && ./gradlew build -x test --no-daemon --refresh-dependencies)
+    (sleep 30 && ./gradlew build -x test --no-daemon) || \
+    (sleep 60 && ./gradlew build -x test --no-daemon --refresh-dependencies) || \
+    (sleep 120 && ./gradlew build -x test --no-daemon --refresh-dependencies)
 
 ENTRYPOINT ["java", "-jar", "build/libs/operationService-0.0.1-SNAPSHOT.jar"]
 
