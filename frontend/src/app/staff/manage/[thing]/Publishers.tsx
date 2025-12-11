@@ -7,12 +7,12 @@ import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import { usePublishers } from "@/features/books/hooks/usePublishers";
 import { useCreatePublisher } from "@/features/books/hooks/useCreatePublisher";
 import { useDeletePublisher } from "@/features/books/hooks/useDeletePublisher";
-import { useErrorAlert } from "@/shared/utils/useErrorAlert";
+import { useErrorHandler } from "@/shared/utils/useErrorHandler";
 
 import "./page.scss";
 
 export const Publishers = () => {
-  const { error, showError } = useErrorAlert();
+  const { error, handleError } = useErrorHandler();
   const { publishers, isLoading } = usePublishers();
   const { createPublisher, isLoading: creating } = useCreatePublisher();
   const { deletePublisher, isLoading: deleting } = useDeletePublisher();
@@ -44,7 +44,7 @@ export const Publishers = () => {
       });
       setFormState({ name: "", website: "", email: "" });
     } catch (err) {
-      showError((err as Error).message || "Ошибка при создании издателя");
+      handleError(err, "Publishers.handleSubmit");
     }
   };
 
@@ -52,7 +52,7 @@ export const Publishers = () => {
     try {
       await deletePublisher(id);
     } catch (err) {
-      showError((err as Error).message || "Ошибка при удалении издателя");
+      handleError(err, "Publishers.handleDelete");
     }
   };
 

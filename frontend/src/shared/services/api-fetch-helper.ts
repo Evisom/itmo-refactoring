@@ -1,21 +1,25 @@
 import { parseError, logError } from "@/shared/utils/error-handler";
 
-export const fetcher = async (url: string, token: string | null) => {
-  if (!token) {
-    throw new Error("No token provided");
-  }
+export const apiFetch = async (
+  url: string,
+  options: RequestInit & { token?: string | null }
+): Promise<Response> => {
+  const { token, ...fetchOptions } = options;
+  
+  const headers: HeadersInit = {
+    ...(fetchOptions.headers as HeadersInit),
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
 
   let response: Response;
   try {
     response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      ...fetchOptions,
+      headers,
     });
   } catch (error) {
     const parsedError = parseError(error);
-    logError(parsedError, `fetcher: ${url}`);
+    logError(parsedError, `apiFetch: ${url}`);
     throw parsedError;
   }
 
@@ -26,11 +30,11 @@ export const fetcher = async (url: string, token: string | null) => {
     }));
     
     const parsedError = parseError(errorData, response.status);
-    logError(parsedError, `fetcher: ${url}`);
+    logError(parsedError, `apiFetch: ${url}`);
     throw parsedError;
   }
 
-  return response.json();
+  return response;
 };
 
-export default fetcher;
+export default apiFetch;

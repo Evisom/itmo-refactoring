@@ -1,4 +1,5 @@
 import fetcher from "@/shared/services/api-client";
+import apiFetch from "@/shared/services/api-fetch-helper";
 import { config } from "@/shared/utils/config";
 import type {
   TransactionResponse,
@@ -63,21 +64,13 @@ const transactionsApi = {
 
   approveTransaction: async (token: string | null, id: number): Promise<TransactionResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.OPERATION_API_V2_URL}/transactions/${id}/approve`, {
+    const response = await apiFetch(`${config.OPERATION_API_V2_URL}/transactions/${id}/approve`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
+      token,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        errorCode: "UNKNOWN_ERROR",
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw error;
-    }
 
     return response.json();
   },
@@ -88,22 +81,14 @@ const transactionsApi = {
     data: TransactionDeclineRequest
   ): Promise<TransactionResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.OPERATION_API_V2_URL}/transactions/${id}/decline`, {
+    const response = await apiFetch(`${config.OPERATION_API_V2_URL}/transactions/${id}/decline`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
+      token,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        errorCode: "UNKNOWN_ERROR",
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw error;
-    }
 
     return response.json();
   },
@@ -132,20 +117,10 @@ const transactionsApi = {
 
   cancelTransaction: async (token: string | null, id: number): Promise<void> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.OPERATION_API_V2_URL}/transactions/${id}`, {
+    await apiFetch(`${config.OPERATION_API_V2_URL}/transactions/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      token,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        errorCode: "UNKNOWN_ERROR",
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw error;
-    }
   },
 
   getReadingStatus: async (token: string | null, bookId: number): Promise<ReadingStatusResponse> => {

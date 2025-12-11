@@ -12,11 +12,11 @@ import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import { useAuthors } from "@/features/books/hooks/useAuthors";
 import { useCreateAuthor } from "@/features/books/hooks/useCreateAuthor";
 import { useDeleteAuthor } from "@/features/books/hooks/useDeleteAuthor";
-import { useErrorAlert } from "@/shared/utils/useErrorAlert";
+import { useErrorHandler } from "@/shared/utils/useErrorHandler";
 
 import "./page.scss";
 export const Authors = () => {
-  const { error, showError } = useErrorAlert();
+  const { error, handleError } = useErrorHandler();
   const { books: authors, isLoading } = useAuthors();
   const { createAuthor, isLoading: creating } = useCreateAuthor();
   const { deleteAuthor, isLoading: deleting } = useDeleteAuthor();
@@ -66,7 +66,7 @@ export const Authors = () => {
     try {
       await deleteAuthor(id);
     } catch (err) {
-      showError((err as Error).message || "Ошибка при удалении автора");
+      handleError(err, "Authors.handleDelete");
     }
   };
 
@@ -94,7 +94,7 @@ export const Authors = () => {
     },
   ];
 
-  if (!data) return <LoadingSpinner fullScreen />;
+  if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
     <>

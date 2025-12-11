@@ -7,7 +7,7 @@ import {
   Box,
   Alert,
 } from "@mui/material";
-import { useErrorAlert } from "@/shared/utils/useErrorAlert";
+import { useErrorHandler } from "@/shared/utils/useErrorHandler";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import { usePublishers } from "@/features/books/hooks/usePublishers";
@@ -21,7 +21,7 @@ import { useDeleteBook } from "@/features/books/hooks/useDeleteBook";
 
 const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
   const router = useRouter();
-  const { error, showError } = useErrorAlert();
+  const { error, handleError } = useErrorHandler();
 
   const { publishers: publishersData, isLoading: publishersLoading } = usePublishers();
   const { themes: themesData, isLoading: themesLoading } = useThemes();
@@ -92,7 +92,7 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
       }
       router.back();
     } catch (err) {
-      showError((err as Error).message || "Не получается сохранить книгу");
+      handleError(err, "Book.handleSubmit");
     }
   };
 
@@ -101,7 +101,7 @@ const Book = ({ type, id = -1 }: { type: "new" | "edit"; id?: number }) => {
       await deleteBook(id);
       router.back();
     } catch (err) {
-      showError((err as Error).message || "Не получается удалить книгу");
+      handleError(err, "Book.handleDelete");
     }
   };
 

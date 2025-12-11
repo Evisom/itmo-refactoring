@@ -10,6 +10,7 @@ import "@fontsource/roboto/700.css";
 import { Container, CssBaseline } from "@mui/material";
 import { Header } from "@/shared/components/Header";
 import { Suspense } from "react";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 
 export default function RootLayout({
   children,
@@ -22,17 +23,19 @@ export default function RootLayout({
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <CssBaseline />
-            <AuthProvider>
-              <Suspense>
-                <Header />
-                <Container
-                  style={{ height: "100%", paddingTop: "92px" }}
-                  maxWidth="xl"
-                >
-                  {children}
-                </Container>
-              </Suspense>
-            </AuthProvider>
+            <ErrorBoundary>
+              <AuthProvider>
+                <Suspense>
+                  <Header />
+                  <Container
+                    style={{ height: "100%", paddingTop: "92px" }}
+                    maxWidth="xl"
+                  >
+                    {children}
+                  </Container>
+                </Suspense>
+              </AuthProvider>
+            </ErrorBoundary>
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

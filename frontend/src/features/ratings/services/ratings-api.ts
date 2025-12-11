@@ -1,4 +1,5 @@
 import fetcher from "@/shared/services/api-client";
+import apiFetch from "@/shared/services/api-fetch-helper";
 import { config } from "@/shared/utils/config";
 import type {
   RatingResponse,
@@ -30,22 +31,14 @@ const ratingsApi = {
 
   createRating: async (token: string | null, data: RatingCreateRequest): Promise<RatingResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.OPERATION_API_V2_URL}/ratings`, {
+    const response = await apiFetch(`${config.OPERATION_API_V2_URL}/ratings`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
+      token,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        errorCode: "UNKNOWN_ERROR",
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw error;
-    }
 
     return response.json();
   },

@@ -8,12 +8,12 @@ import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import { useGenres } from "@/features/books/hooks/useGenres";
 import { useCreateGenre } from "@/features/books/hooks/useCreateGenre";
 import { useDeleteGenre } from "@/features/books/hooks/useDeleteGenre";
-import { useErrorAlert } from "@/shared/utils/useErrorAlert";
+import { useErrorHandler } from "@/shared/utils/useErrorHandler";
 
 import "./page.scss";
 
 export const Genres = () => {
-  const { error, showError } = useErrorAlert();
+  const { error, handleError } = useErrorHandler();
   const { genres, isLoading } = useGenres();
   const { createGenre, isLoading: creating } = useCreateGenre();
   const { deleteGenre } = useDeleteGenre();
@@ -41,7 +41,7 @@ export const Genres = () => {
       });
       setFormState({ name: "", popularity: "" });
     } catch (err) {
-      showError((err as Error).message || "Ошибка при создании жанра");
+      handleError(err, "Genres.handleSubmit");
     }
   };
 
@@ -49,7 +49,7 @@ export const Genres = () => {
     try {
       await deleteGenre(id);
     } catch (err) {
-      showError((err as Error).message || "Ошибка при удалении жанра");
+      handleError(err, "Genres.handleDelete");
     }
   };
 

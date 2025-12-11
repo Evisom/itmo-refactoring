@@ -22,11 +22,11 @@ import { useAllBookCopies } from "@/features/books/hooks/useAllBookCopies";
 import { useCreateBookCopy } from "@/features/books/hooks/useCreateBookCopy";
 import { useUpdateBookCopy } from "@/features/books/hooks/useUpdateBookCopy";
 import { useDeleteBookCopy } from "@/features/books/hooks/useDeleteBookCopy";
-import { useErrorAlert } from "@/shared/utils/useErrorAlert";
+import { useErrorHandler } from "@/shared/utils/useErrorHandler";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 
 const Copies = () => {
-  const { error, showError } = useErrorAlert();
+  const { error, handleError } = useErrorHandler();
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
@@ -124,7 +124,7 @@ const Copies = () => {
       mutate();
       handleCloseModal();
     } catch (err) {
-      showError((err as Error).message || "Ошибка при сохранении экземпляра");
+      handleError(err, "Copies.handleSubmit");
     }
   };
 
@@ -133,7 +133,7 @@ const Copies = () => {
       await deleteBookCopy(id);
       mutate();
     } catch (err) {
-      showError((err as Error).message || "Ошибка при удалении экземпляра");
+      handleError(err, "Copies.handleDelete");
     }
   };
 

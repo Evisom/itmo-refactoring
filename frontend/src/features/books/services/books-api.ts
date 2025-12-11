@@ -1,4 +1,5 @@
 import fetcher from "@/shared/services/api-client";
+import apiFetch from "@/shared/services/api-fetch-helper";
 import { config } from "@/shared/utils/config";
 import type {
   BookResponse,
@@ -54,64 +55,38 @@ export const booksApi = {
 
   createBook: async (token: string | null, data: BookCreateRequest): Promise<BookResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.API_V2_URL}/books`, {
+    const response = await apiFetch(`${config.API_V2_URL}/books`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
+      token,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        errorCode: "UNKNOWN_ERROR",
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw error;
-    }
 
     return response.json();
   },
 
   updateBook: async (token: string | null, id: number, data: BookUpdateRequest): Promise<BookResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.API_V2_URL}/books/${id}`, {
+    const response = await apiFetch(`${config.API_V2_URL}/books/${id}`, {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
+      token,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        errorCode: "UNKNOWN_ERROR",
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw error;
-    }
 
     return response.json();
   },
 
   deleteBook: async (token: string | null, id: number): Promise<void> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.API_V2_URL}/books/${id}`, {
+    await apiFetch(`${config.API_V2_URL}/books/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      token,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        errorCode: "UNKNOWN_ERROR",
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw error;
-    }
   },
 
   getBookCopies: async (

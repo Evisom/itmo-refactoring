@@ -19,6 +19,7 @@ import { config } from "@/shared/utils/config";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import type { LibraryReportResponse } from "@/shared/types/api";
+import apiFetch from "@/shared/services/api-fetch-helper";
 
 const LibraryReportPage = () => {
   const searchParams = useSearchParams();
@@ -40,17 +41,12 @@ const LibraryReportPage = () => {
       if (!token) return;
       try {
         setLoading(true);
-        const response = await fetch(
+        const response = await apiFetch(
           `${config.OPERATION_API_V2_URL}/transactions/library-report/${libraryId}?date=${date}`,
           {
-            headers: {
-              authorization: "Bearer " + token,
-            },
+            token,
           }
         );
-        if (!response.ok) {
-          throw new Error("Ошибка загрузки отчета о библиотеке");
-        }
         const data: LibraryReportResponse[] = await response.json();
         setReportData(data);
       } catch (err: unknown) {

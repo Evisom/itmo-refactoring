@@ -8,12 +8,12 @@ import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import { useThemes } from "@/features/books/hooks/useThemes";
 import { useCreateTheme } from "@/features/books/hooks/useCreateTheme";
 import { useDeleteTheme } from "@/features/books/hooks/useDeleteTheme";
-import { useErrorAlert } from "@/shared/utils/useErrorAlert";
+import { useErrorHandler } from "@/shared/utils/useErrorHandler";
 
 import "./page.scss";
 
 export const Themes = () => {
-  const { error, showError } = useErrorAlert();
+  const { error, handleError } = useErrorHandler();
   const { themes, isLoading } = useThemes();
   const { createTheme, isLoading: creating } = useCreateTheme();
   const { deleteTheme, isLoading: deleting } = useDeleteTheme();
@@ -41,7 +41,7 @@ export const Themes = () => {
       });
       setFormState({ name: "", popularity: "" });
     } catch (err) {
-      showError((err as Error).message || "Ошибка при создании темы");
+      handleError(err, "Themes.handleSubmit");
     }
   };
 
@@ -49,7 +49,7 @@ export const Themes = () => {
     try {
       await deleteTheme(id);
     } catch (err) {
-      showError((err as Error).message || "Ошибка при удалении темы");
+      handleError(err, "Themes.handleDelete");
     }
   };
 

@@ -1,4 +1,5 @@
 import fetcher from "@/shared/services/api-client";
+import apiFetch from "@/shared/services/api-fetch-helper";
 import { config } from "@/shared/utils/config";
 import type {
   PublisherResponse,
@@ -14,64 +15,38 @@ const publishersApi = {
 
   createPublisher: async (token: string | null, data: PublisherCreateRequest): Promise<PublisherResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.API_V2_URL}/publishers`, {
+    const response = await apiFetch(`${config.API_V2_URL}/publishers`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
+      token,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        errorCode: "UNKNOWN_ERROR",
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw error;
-    }
 
     return response.json();
   },
 
   updatePublisher: async (token: string | null, id: number, data: PublisherUpdateRequest): Promise<PublisherResponse> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.API_V2_URL}/publishers/${id}`, {
+    const response = await apiFetch(`${config.API_V2_URL}/publishers/${id}`, {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
+      token,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        errorCode: "UNKNOWN_ERROR",
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw error;
-    }
 
     return response.json();
   },
 
   deletePublisher: async (token: string | null, id: number): Promise<void> => {
     if (!token) throw new Error("No token provided");
-    const response = await fetch(`${config.API_V2_URL}/publishers/${id}`, {
+    await apiFetch(`${config.API_V2_URL}/publishers/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      token,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        errorCode: "UNKNOWN_ERROR",
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      }));
-      throw error;
-    }
   },
 };
 
