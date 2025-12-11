@@ -23,7 +23,7 @@ import { useCreateBookCopy } from "@/features/books/hooks/useCreateBookCopy";
 import { useUpdateBookCopy } from "@/features/books/hooks/useUpdateBookCopy";
 import { useDeleteBookCopy } from "@/features/books/hooks/useDeleteBookCopy";
 import { useErrorHandler } from "@/shared/utils/useErrorHandler";
-import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { TableSkeleton } from "@/shared/components/ui/Skeleton";
 
 const Copies = () => {
   const { error, handleError } = useErrorHandler();
@@ -193,7 +193,7 @@ const Copies = () => {
         Добавить экземпляр
       </Button>
       {copiesLoading ? (
-        <LoadingSpinner />
+        <TableSkeleton rows={5} columns={6} />
       ) : (
         <DataGrid
           rows={copies || []}

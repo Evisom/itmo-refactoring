@@ -5,6 +5,7 @@ import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { TableSkeleton } from "@/shared/components/ui/Skeleton";
 import { useGenres } from "@/features/books/hooks/useGenres";
 import { useCreateGenre } from "@/features/books/hooks/useCreateGenre";
 import { useDeleteGenre } from "@/features/books/hooks/useDeleteGenre";
@@ -112,12 +113,16 @@ export const Genres = () => {
       </div>
 
       <div className="results">
-        <DataGrid
-          rows={genres || []}
-          columns={columns}
-          hideFooterPagination
-          hideFooterSelectedRowCount
-        />
+        {isLoading ? (
+          <TableSkeleton rows={5} columns={3} />
+        ) : (
+          <DataGrid
+            rows={genres || []}
+            columns={columns}
+            hideFooterPagination
+            hideFooterSelectedRowCount
+          />
+        )}
       </div>
     </>
   );

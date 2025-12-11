@@ -9,6 +9,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { enUS } from "date-fns/locale";
 
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { TableSkeleton } from "@/shared/components/ui/Skeleton";
 import { useAuthors } from "@/features/books/hooks/useAuthors";
 import { useCreateAuthor } from "@/features/books/hooks/useCreateAuthor";
 import { useDeleteAuthor } from "@/features/books/hooks/useDeleteAuthor";
@@ -58,7 +59,7 @@ export const Authors = () => {
       });
       setFormState({ name: "", surname: "", birthDate: "" });
     } catch (err) {
-      showError((err as Error).message || "Ошибка при создании автора");
+      handleError(err, "Authors.handleSubmit");
     }
   };
 
@@ -145,7 +146,7 @@ export const Authors = () => {
 
       <div className="results">
         {isLoading ? (
-          <LoadingSpinner />
+          <TableSkeleton rows={5} columns={4} />
         ) : (
           <DataGrid
             rows={authors || []}

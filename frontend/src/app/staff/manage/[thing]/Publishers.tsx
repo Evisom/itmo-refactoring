@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { TableSkeleton } from "@/shared/components/ui/Skeleton";
 import { usePublishers } from "@/features/books/hooks/usePublishers";
 import { useCreatePublisher } from "@/features/books/hooks/useCreatePublisher";
 import { useDeletePublisher } from "@/features/books/hooks/useDeletePublisher";
@@ -119,12 +120,16 @@ export const Publishers = () => {
       </div>
 
       <div className="results">
-        <DataGrid
-          rows={publishers || []}
-          columns={columns}
-          hideFooterPagination
-          hideFooterSelectedRowCount
-        />
+        {isLoading ? (
+          <TableSkeleton rows={5} columns={4} />
+        ) : (
+          <DataGrid
+            rows={publishers || []}
+            columns={columns}
+            hideFooterPagination
+            hideFooterSelectedRowCount
+          />
+        )}
       </div>
     </>
   );

@@ -19,11 +19,47 @@ export const useCreateRating = () => {
     setIsLoading(true);
     setError(null);
 
+    const optimisticRating: RatingResponse = {
+      id: Date.now(),
+      bookId: data.bookId,
+      userId: "",
+      rating: data.rating,
+      comment: data.comment,
+      createdAt: new Date().toISOString(),
+    };
+
+    const cacheKey = ["ratings", { bookId: data.bookId }, token];
+
     try {
+      const previousData = await mutate(cacheKey);
+      
+      await mutate(
+        cacheKey,
+        async (current: RatingResponse[] | undefined) => {
+          if (!current) return [optimisticRating];
+          return [optimisticRating, ...current];
+        },
+        false
+      );
+
       const rating = await ratingsApi.createRating(token, data);
-      await mutate(["ratings", { bookId: data.bookId }, token]);
+
+      await mutate(
+        cacheKey,
+        async (current: RatingResponse[] | undefined) => {
+          if (!current) return [rating];
+          return current.map((r) => (r.id === optimisticRating.id ? rating : r));
+        },
+        false
+      );
+
+      await mutate(cacheKey);
       return rating;
     } catch (err) {
+      const rollbackData = await mutate(cacheKey);
+      if (rollbackData) {
+        await mutate(cacheKey, rollbackData, false);
+      }
       setError(err);
       throw err;
     } finally {

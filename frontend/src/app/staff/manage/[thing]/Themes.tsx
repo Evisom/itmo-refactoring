@@ -5,6 +5,7 @@ import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { TableSkeleton } from "@/shared/components/ui/Skeleton";
 import { useThemes } from "@/features/books/hooks/useThemes";
 import { useCreateTheme } from "@/features/books/hooks/useCreateTheme";
 import { useDeleteTheme } from "@/features/books/hooks/useDeleteTheme";
@@ -113,12 +114,16 @@ export const Themes = () => {
       </div>
 
       <div className="results">
-        <DataGrid
-          rows={themes || []}
-          columns={columns}
-          hideFooterPagination
-          hideFooterSelectedRowCount
-        />
+        {isLoading ? (
+          <TableSkeleton rows={5} columns={3} />
+        ) : (
+          <DataGrid
+            rows={themes || []}
+            columns={columns}
+            hideFooterPagination
+            hideFooterSelectedRowCount
+          />
+        )}
       </div>
     </>
   );

@@ -20,6 +20,7 @@ import {
   Pagination,
 } from "@mui/material";
 import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { BookCardSkeleton } from "@/shared/components/ui/Skeleton";
 import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 import { useBooks } from "@/features/books/hooks/useBooks";
 import { useAuthors } from "@/features/books/hooks/useAuthors";
@@ -62,6 +63,7 @@ export default function Home() {
   const {
     books: booksList,
     totalElements,
+    isLoading,
     isValidating,
     mutate,
   } = useBooks({
@@ -253,7 +255,15 @@ export default function Home() {
             </Button>
           </div>
           <div className="results-body" style={{ marginTop: 24 }}>
-            {isValidating ? (
+            {isLoading ? (
+              <Grid container spacing={2}>
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <BookCardSkeleton />
+                  </Grid>
+                ))}
+              </Grid>
+            ) : isValidating ? (
               <LoadingSpinner fullScreen />
             ) : (
               <>
