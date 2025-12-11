@@ -1,8 +1,8 @@
 "use client";
 
-import { useAuth } from "../components/AuthProvider";
-import { Progress } from "../components/Progress";
-import { Login } from "../components/Login";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { Login } from "@/features/auth/components/Login";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -15,7 +15,7 @@ const LoginPage = () => {
   }, [authenticated, loading, router]);
 
   if (loading) {
-    return <Progress />;
+    return <LoadingSpinner fullScreen />;
   }
   return <Login />;
 };

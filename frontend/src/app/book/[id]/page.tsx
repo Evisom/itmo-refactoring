@@ -19,11 +19,11 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
-import { useAuth } from "@/app/components/AuthProvider";
-import { Progress } from "@/app/components/Progress";
-import BookCover from "@/app/components/BookCover";
+import fetcher from "@/shared/services/api-client";
+import { config } from "@/shared/utils/config";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import BookCover from "@/features/books/components/BookCover";
 
 const BookPage = ({ params }: { params: { id: string } }) => {
   const { id } = React.use(params);
@@ -140,7 +140,7 @@ const BookPage = ({ params }: { params: { id: string } }) => {
     setNewReview({ ratingValue: 0, review: "" });
   };
 
-  if (!bookData || !reviewsData || !librariesData) return <Progress />;
+  if (!bookData || !reviewsData || !librariesData) return <LoadingSpinner fullScreen />;
   if (bookError || reviewsError || librariesError)
     return <Typography color="error">Ошибка загрузки данных</Typography>;
 

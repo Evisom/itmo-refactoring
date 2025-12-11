@@ -4,11 +4,10 @@ import {
   createContext,
   useEffect,
   useState,
-  useContext,
   ReactNode,
 } from "react";
 import Keycloak, { KeycloakInstance } from "keycloak-js";
-import { config } from "./../utils/config";
+import { config } from "@/shared/utils/config";
 
 interface AuthContextProps {
   keycloak: KeycloakInstance | null;
@@ -23,7 +22,7 @@ interface AuthContextProps {
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextProps>({
+export const AuthContext = createContext<AuthContextProps>({
   keycloak: null,
   authenticated: false,
   loading: true,
@@ -136,4 +135,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);

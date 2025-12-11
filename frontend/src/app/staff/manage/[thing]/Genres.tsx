@@ -6,14 +6,14 @@ import useSWR from "swr";
 import { Card, CardContent, TextField, Button, Alert } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
-import { Progress } from "@/app/components/Progress";
-import { useAuth } from "@/app/components/AuthProvider";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
+import fetcher from "@/shared/services/api-client";
+import { config } from "@/shared/utils/config";
 
 import "./page.scss";
-import { useErrorAlert } from "@/app/utils/useErrorAlert";
+import { useErrorAlert } from "@/shared/utils/useErrorAlert";
 
 export const Genres = () => {
   const { token } = useAuth();
@@ -96,7 +96,7 @@ export const Genres = () => {
     },
   ];
 
-  if (!data) return <Progress />;
+  if (!data) return <LoadingSpinner fullScreen />;
 
   return (
     <>

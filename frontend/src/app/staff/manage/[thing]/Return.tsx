@@ -11,8 +11,8 @@ import {
   Alert,
   Box,
 } from "@mui/material";
-import { config } from "@/app/utils/config";
-import { useAuth } from "@/app/components/AuthProvider";
+import { config } from "@/shared/utils/config";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 const Return = () => {
   const { token } = useAuth();
@@ -53,7 +53,7 @@ const Return = () => {
           message: "Книга успешно возвращена",
           severity: "success",
         });
-        setInvNumber(""); // Clear the input field after successful return
+        setInvNumber(); // Clear the input field after successful return
       } else {
         const errorData = await response.json();
         setSnackbar({

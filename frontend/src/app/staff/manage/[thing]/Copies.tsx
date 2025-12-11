@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import useSWR from "swr";
 import {
   Button,
-  Typography,
   Box,
   Dialog,
   DialogTitle,
@@ -13,16 +12,15 @@ import {
   Alert,
   Switch,
   FormControlLabel,
-  CircularProgress,
   Autocomplete,
   TextField,
   MenuItem,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
-import { useAuth } from "@/app/components/AuthProvider";
-import { useErrorAlert } from "@/app/utils/useErrorAlert";
+import fetcher from "@/shared/services/api-client";
+import { config } from "@/shared/utils/config";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useErrorAlert } from "@/shared/utils/useErrorAlert";
 
 const Copies = () => {
   const { token } = useAuth();
@@ -51,7 +49,7 @@ const Copies = () => {
   );
 
   // Fetch copies data
-  const { data, isLoading, mutate } = useSWR(
+  const { data, mutate } = useSWR(
     token
       ? [
           `${config.API_URL}/library/copies?page=${paginationModel.page}&size=${paginationModel.pageSize}`,

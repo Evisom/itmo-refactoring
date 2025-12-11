@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useAuth } from "../components/AuthProvider";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useRouter } from "next/navigation";
 
 type UseRequireAuthOptions = {

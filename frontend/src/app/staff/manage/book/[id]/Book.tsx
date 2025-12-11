@@ -8,12 +8,12 @@ import {
   Box,
   Alert,
 } from "@mui/material";
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
-import { useAuth } from "@/app/components/AuthProvider";
-import { useErrorAlert } from "@/app/utils/useErrorAlert";
+import fetcher from "@/shared/services/api-client";
+import { config } from "@/shared/utils/config";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useErrorAlert } from "@/shared/utils/useErrorAlert";
 import { useRouter } from "next/navigation";
-import { Progress } from "@/app/components/Progress";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 
 const Book = ({ type, id = -1 }) => {
   const router = useRouter();
@@ -145,7 +145,7 @@ const Book = ({ type, id = -1 }) => {
       (bookData || type === "new")
     )
   ) {
-    return <Progress />;
+    return <LoadingSpinner fullScreen />;
   }
   return (
     <Box sx={{ maxWidth: 600, mx: "auto", mt: 4 }}>

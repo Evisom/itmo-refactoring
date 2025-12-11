@@ -23,10 +23,10 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
-import { useAuth } from "@/app/components/AuthProvider";
-import { Progress } from "@/app/components/Progress";
+import fetcher from "@/shared/services/api-client";
+import { config } from "@/shared/utils/config";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 
 const ApprovalsPage = () => {
   const { token } = useAuth();
@@ -39,12 +39,12 @@ const ApprovalsPage = () => {
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
-    severity: "success", // Can be 'success' or 'error'
+    severity: "success" as "success" | "error",
   });
 
   const { data: librariesData, error: librariesError } = useSWR(
     [token ? `${config.API_URL}/library/allLibraries` : null, token],
-    ([url, token]) => fetcher(url, token)
+    ([url, token]) => fetcher(url, token!)
   );
 
   const {
@@ -55,7 +55,7 @@ const ApprovalsPage = () => {
     selectedLibrary
       ? [`${config.OPERATION_API_URL}/operations?libraryId=${selectedLibrary}`, token]
       : null,
-    ([url, token]) => fetcher(url, token)
+    ([url, token]) => fetcher(url, token!)
   );
 
   const handleSnackbarClose = () => {
@@ -118,7 +118,7 @@ const ApprovalsPage = () => {
     }
   };
 
-  if (!librariesData) return <Progress />;
+  if (!librariesData) return <LoadingSpinner fullScreen />;
   if (librariesError)
     return <Typography color="error">Ошибка загрузки библиотек</Typography>;
   if (operationsError)
@@ -207,7 +207,7 @@ const ApprovalsPage = () => {
           </Table>
         </TableContainer>
       ) : (
-        selectedLibrary && <Progress />
+        selectedLibrary && <LoadingSpinner fullScreen />
       )}
 
       {/* Decline Reason Dialog */}

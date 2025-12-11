@@ -4,8 +4,8 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Typography } from "@mui/material";
 
-import { Progress } from "@/app/components/Progress";
-import { useRequireAuth } from "@/app/utils/useRequireAuth";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 
 import "./page.scss";
 import { Authors } from "./Authors";
@@ -32,7 +32,7 @@ const ALLOWED_PARAMS = [
   "libraryReport",
 ];
 
-const ManagePage = ({ params }: { params: any }) => {
+const ManagePage = ({ params }: { params: { thing: string } }) => {
   const { thing } = React.use(params);
   const router = useRouter();
   const { loading } = useRequireAuth({ requiredRole: "ROLE_LIBRARIAN" });
@@ -43,7 +43,7 @@ const ManagePage = ({ params }: { params: any }) => {
   }
 
   if (loading) {
-    return <Progress />;
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

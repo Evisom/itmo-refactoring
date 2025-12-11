@@ -21,14 +21,14 @@ import {
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
-import { useAuth } from "@/app/components/AuthProvider";
-import { useRequireAuth } from "@/app/utils/useRequireAuth";
+import fetcher from "@/shared/services/api-client";
+import { config } from "@/shared/utils/config";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 
 const LibraryManagementPage = () => {
   const { token } = useAuth();
-  const { loading } = useRequireAuth({ requiredRole: "ROLE_ADMIN" });
+  useRequireAuth({ requiredRole: "ROLE_ADMIN" });
   const { data: librariesData, error: librariesError } = useSWR(
     token ? [`${config.API_URL}/library/allLibraries`, token] : null,
     ([url, token]) => fetcher(url, token)

@@ -11,8 +11,8 @@ import {
   Box,
   Input,
 } from "@mui/material";
-import { useAuth } from "@/app/components/AuthProvider";
-import { config } from "@/app/utils/config";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { config } from "@/shared/utils/config";
 
 const CsvImportPage = () => {
   const { token } = useAuth();

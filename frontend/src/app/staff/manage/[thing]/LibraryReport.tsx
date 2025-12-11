@@ -11,16 +11,14 @@ import {
   TableHead,
   TableRow,
   Card,
-  CardContent,
   Alert,
   Snackbar,
-  CircularProgress,
   Box,
 } from "@mui/material";
-import { config } from "@/app/utils/config";
+import { config } from "@/shared/utils/config";
 
-import { useAuth } from "@/app/components/AuthProvider";
-import { Progress } from "@/app/components/Progress";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 
 const LibraryReportPage = () => {
   const searchParams = useSearchParams();
@@ -39,6 +37,7 @@ const LibraryReportPage = () => {
 
   useEffect(() => {
     const fetchReport = async () => {
+      if (!token) return;
       try {
         setLoading(true);
         const response = await fetch(
@@ -54,18 +53,19 @@ const LibraryReportPage = () => {
         }
         const data = await response.json();
         setReportData(data);
-      } catch (err) {
-        setError(err.message);
-        setSnackbar({ open: true, message: err.message, severity: "error" });
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : "Произошла ошибка";
+        setError(errorMessage);
+        setSnackbar({ open: true, message: errorMessage, severity: "error" });
       } finally {
         setLoading(false);
       }
     };
 
-    if (libraryId && date) {
+    if (libraryId && date && token) {
       fetchReport();
     }
-  }, [libraryId, date]);
+  }, [libraryId, date, token]);
 
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -79,7 +79,7 @@ const LibraryReportPage = () => {
     );
   }
   if (loading) {
-    return <Progress />;
+    return <LoadingSpinner fullScreen />;
   }
 
   return (
@@ -89,7 +89,7 @@ const LibraryReportPage = () => {
       </Typography>
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-          <CircularProgress />
+          <LoadingSpinner fullScreen />
         </Box>
       ) : error ? (
         <Typography color="error">{error}</Typography>

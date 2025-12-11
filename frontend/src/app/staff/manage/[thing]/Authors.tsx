@@ -9,13 +9,13 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { enUS } from "date-fns/locale";
 
-import { Progress } from "@/app/components/Progress";
-import { useAuth } from "@/app/components/AuthProvider";
-import { fetcher } from "@/app/utils/fetcher";
-import { config } from "@/app/utils/config";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import fetcher from "@/shared/services/api-client";
+import { config } from "@/shared/utils/config";
 
 import "./page.scss";
-import { useErrorAlert } from "@/app/utils/useErrorAlert";
+import { useErrorAlert } from "@/shared/utils/useErrorAlert";
 export const Authors = () => {
   const { token } = useAuth();
   const { error, showError } = useErrorAlert();
@@ -108,7 +108,7 @@ export const Authors = () => {
     },
   ];
 
-  if (!data) return <Progress />;
+  if (!data) return <LoadingSpinner fullScreen />;
 
   return (
     <>

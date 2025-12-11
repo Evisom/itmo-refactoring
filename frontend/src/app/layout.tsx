@@ -1,14 +1,14 @@
 import "./globals.scss";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
-import { AuthProvider } from "./components/AuthProvider";
+import { AuthProvider } from "@/features/auth/components/AuthProvider";
 import { ThemeProvider } from "@mui/material/styles";
-import theme from "./utils/theme";
+import theme from "@/shared/utils/theme";
 import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 import { Container, CssBaseline } from "@mui/material";
-import { Header } from "./components/Header";
+import { Header } from "@/shared/components/Header";
 import { Suspense } from "react";
 
 export default function RootLayout({

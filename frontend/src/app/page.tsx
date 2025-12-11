@@ -15,23 +15,22 @@ import {
   ListItemText,
   Box,
   Slider,
-  FormControlLabel,
   Grid,
   Link,
   Pagination,
 } from "@mui/material";
 import useSWR from "swr";
-import { useAuth } from "./components/AuthProvider";
-import { Progress } from "./components/Progress";
-import { useRequireAuth } from "./utils/useRequireAuth";
-import { config } from "./utils/config";
-import { fetcher } from "./utils/fetcher";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
+import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
+import { config } from "@/shared/utils/config";
+import fetcher from "@/shared/services/api-client";
 import "./page.scss";
-import BookCover from "./components/BookCover";
+import BookCover from "@/features/books/components/BookCover";
 
 export default function Home() {
-  const { authenticated, loading } = useRequireAuth();
-  const { token, roles, userId } = useAuth();
+  const { loading } = useRequireAuth();
+  const { token } = useAuth();
 
   const [filterState, setFilterState] = useState({
     name: "",
@@ -127,7 +126,7 @@ export default function Home() {
   };
 
   if (loading) {
-    return <Progress />;
+    return <LoadingSpinner fullScreen />;
   }
 
   return (
@@ -291,7 +290,7 @@ export default function Home() {
           </div>
           <div className="results-body" style={{ marginTop: 24 }}>
             {isValidating ? (
-              <Progress />
+              <LoadingSpinner fullScreen />
             ) : (
               <>
                 {booksData?.content?.length ? (

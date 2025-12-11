@@ -10,15 +10,14 @@ import {
   Box,
   Button,
   Rating,
-  Link,
   Alert,
   Snackbar,
   Chip,
 } from "@mui/material";
-import { useAuth } from "../components/AuthProvider";
-import { fetcher } from "../utils/fetcher";
-import { config } from "../utils/config";
-import { Progress } from "../components/Progress";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import fetcher from "@/shared/services/api-client";
+import { config } from "@/shared/utils/config";
+import { LoadingSpinner } from "@/shared/components/ui/LoadingSpinner";
 import { useSearchParams } from "next/navigation";
 
 const UserHistoryPage = () => {
@@ -76,7 +75,7 @@ const UserHistoryPage = () => {
   };
 
   if (!historyData) {
-    return <Progress />;
+    return <LoadingSpinner fullScreen />;
   }
 
   const getChipColor = (status) => {

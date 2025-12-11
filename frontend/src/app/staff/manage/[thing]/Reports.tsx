@@ -1,10 +1,8 @@
-import { useAuth } from "@/app/components/AuthProvider";
-import { config } from "@/app/utils/config";
-import { fetcher } from "@/app/utils/fetcher";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { config } from "@/shared/utils/config";
+import fetcher from "@/shared/services/api-client";
 import {
   Button,
-  Grid,
-  InputLabel,
   MenuItem,
   Select,
   TextField,
@@ -25,7 +23,7 @@ const Reports = () => {
   const isValidEmail = () =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email === "";
   const [selectedLibrary, setSelectedLibrary] = useState<number | null>(null);
-  const { data: librariesData, error: librariesError } = useSWR(
+  const { data: librariesData } = useSWR(
     token ? [`${config.API_URL}/library/allLibraries`, token] : null,
     ([url, token]) => fetcher(url, token)
   );
@@ -37,7 +35,7 @@ const Reports = () => {
       const formattedDate = newValue.toISOString().split("T")[0];
       setDate(formattedDate);
     } else {
-      setDate("");
+      setDate();
     }
   };
   return (
